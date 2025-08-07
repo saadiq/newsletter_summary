@@ -12,12 +12,13 @@ def authenticate_gmail():
     creds = None
     if os.path.exists('token.json'):
         try:
-            creds = Credentials.from_authorized_user_info(
-                json.loads(open('token.json').read()))
+            with open('token.json', 'r') as f:
+                token_data = json.load(f)
+            creds = Credentials.from_authorized_user_info(token_data)
         except Exception as e:
             print(f"Error loading credentials from token.json: {str(e)}")
             print("Recommendation: Delete token.json and reauthenticate.")
-            raise
+            raise Exception("Invalid JSON")
     if not creds or not creds.valid:
         if creds and creds.expired and creds.refresh_token:
             try:

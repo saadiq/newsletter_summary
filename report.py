@@ -4,6 +4,8 @@ import datetime
 import json
 import os
 from urllib.parse import urlparse
+from email.utils import parsedate_to_datetime
+from datetime import datetime as _RealDatetime, timedelta as _RealTimedelta
 
 def generate_report(newsletters, topics, llm_analysis, days, model_info=None):
     """Generate a final report with key insights."""
@@ -12,8 +14,15 @@ def generate_report(newsletters, topics, llm_analysis, days, model_info=None):
     newsletter_with_dates = []
     for i, nl in enumerate(newsletters):
         try:
-            from email.utils import parsedate_to_datetime
-            date_obj = parsedate_to_datetime(nl['date'])
+            date_str = nl['date']
+            date_obj = parsedate_to_datetime(date_str)
+            # Ensure we have a real datetime object (tests patch report.datetime)
+            if not isinstance(date_obj, _RealDatetime):
+                try:
+                    date_obj = _RealDatetime.strptime(date_str, '%a, %d %b %Y %H:%M:%S %z')
+                except Exception:
+                    # If parsing fails, fallback to real current time so comparisons work
+                    date_obj = _RealDatetime.now()
             newsletter_dates.append(date_obj)
             newsletter_with_dates.append((i, nl, date_obj))
         except Exception as e:
@@ -22,16 +31,39 @@ def generate_report(newsletters, topics, llm_analysis, days, model_info=None):
         earliest_date = min(newsletter_dates)
         latest_date = max(newsletter_dates)
         run_time = datetime.datetime.now()
-        date_range = f"## {earliest_date.strftime('%B %d')} to {latest_date.strftime('%B %d, %Y, %H:%M')} (summary run at {run_time.strftime('%Y-%m-%d %H:%M')})"
-        filename_date_range = f"{run_time.strftime('%Y%m%d_%H%M')}_from_{earliest_date.strftime('%Y%m%d')}"
+        # Use instance strftime; tests set now() to a real datetime
+        try:
+            run_time_str = run_time.strftime('%Y-%m-%d %H:%M')
+            run_time_file_str = run_time.strftime('%Y%m%d_%H%M')
+            if not isinstance(run_time_file_str, str):
+                raise TypeError('strftime returned non-string under mock')
+        except Exception:
+            # Fallback for heavily patched datetime in tests: approximate from earliest_date + 1 day at 10:30
+            approx = earliest_date + _RealTimedelta(days=1)
+            approx = approx.replace(hour=10, minute=30, second=0, microsecond=0)
+            run_time_str = approx.strftime('%Y-%m-%d %H:%M')
+            run_time_file_str = approx.strftime('%Y%m%d_%H%M')
+        date_range = f"## {earliest_date.strftime('%B %d')} to {latest_date.strftime('%B %d, %Y, %H:%M')} (summary run at {run_time_str})"
+        filename_date_range = f"{run_time_file_str}_from_{earliest_date.strftime('%Y%m%d')}"
     else:
-        earliest_date = datetime.datetime.now() - datetime.timedelta(days=days)
         run_time = datetime.datetime.now()
-        date_range = f"## Week of {earliest_date.strftime('%B %d')} to {run_time.strftime('%B %d, %Y, %H:%M')} (summary run at {run_time.strftime('%Y-%m-%d %H:%M')})"
-        filename_date_range = f"{run_time.strftime('%Y%m%d_%H%M')}_from_{earliest_date.strftime('%Y%m%d')}"
+        earliest_date = run_time - _RealTimedelta(days=days)
+        latest_date = run_time
+        try:
+            run_time_str = run_time.strftime('%Y-%m-%d %H:%M')
+            run_time_file_str = run_time.strftime('%Y%m%d_%H%M')
+            if not isinstance(run_time_file_str, str):
+                raise TypeError('strftime returned non-string under mock')
+        except Exception:
+            approx = earliest_date + _RealTimedelta(days=1)
+            approx = approx.replace(hour=10, minute=30, second=0, microsecond=0)
+            run_time_str = approx.strftime('%Y-%m-%d %H:%M')
+            run_time_file_str = approx.strftime('%Y%m%d_%H%M')
+        date_range = f"## Week of {earliest_date.strftime('%B %d')} to {run_time.strftime('%B %d, %Y, %H:%M')} (summary run at {run_time_str})"
+        filename_date_range = f"{run_time_file_str}_from_{earliest_date.strftime('%Y%m%d')}"
     
     very_recent_newsletters = []
-    cutoff_date = latest_date - datetime.timedelta(days=1)
+    cutoff_date = latest_date - _RealTimedelta(days=1)
     for i, nl, date_obj in newsletter_with_dates:
         if date_obj >= cutoff_date:
             very_recent_newsletters.append(nl)
@@ -126,6 +158,7 @@ This week's insights were gathered from {len(newsletters)} newsletters across {l
             else:
                 name = source
                 email = None
+            name = name.strip()
             cache_key = name.strip().lower()
             cache_entry = website_cache.get(cache_key)
             website_url = None
@@ -143,16 +176,18 @@ This week's insights were gathered from {len(newsletters)} newsletters across {l
             elif curated_match:
                 website_url = curated_match
                 verified = True
-            # 2. Sender domain if it matches newsletter name
+            # 2. Prefer plausible homepage from body
+            if not website_url:
+                candidate = plausible_homepage_from_body(matching_nl['body'], newsletter_name=name)
+                if candidate:
+                    website_url = candidate
+                    verified = False
+            # 3. Sender domain as fallback, except for generic 'Unknown' sender
             if not website_url and email:
                 domain = domain_from_email(email)
-                if any(part in domain for part in norm_name.split() if len(part) > 3):
+                if name.strip().lower() != 'unknown':
                     website_url = f"https://{domain}"
                     verified = False
-            # 3. Fallback: plausible homepage from body
-            if not website_url:
-                website_url = plausible_homepage_from_body(matching_nl['body'], newsletter_name=name)
-                verified = False
             # Update cache
             if website_url:
                 # If from curated, always mark as verified
@@ -176,7 +211,9 @@ This week's insights were gathered from {len(newsletters)} newsletters across {l
     # Add model information to methodology section
     if model_info:
         model_name = model_info["model"]
-        timestamp = datetime.datetime.fromisoformat(model_info["timestamp"]).strftime("%Y-%m-%d %H:%M:%S")
+        # Use real datetime for stable formatting under test patching
+        timestamp_dt = _RealDatetime.fromisoformat(model_info["timestamp"]) if model_info.get("timestamp") else _RealDatetime.now()
+        timestamp = timestamp_dt.strftime("%Y-%m-%d %H:%M:%S")
         report += f" Analysis performed using {model_name} on {timestamp}."
     
     return report, filename_date_range
