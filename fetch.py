@@ -1,9 +1,16 @@
 import datetime
+from typing import List, Optional, Dict, Any
 import base64
 import re
 from tqdm import tqdm
 
-def get_ai_newsletters(service, days=7, label='ai-newsletter', from_email=None, to_email=None):
+def get_ai_newsletters(
+    service,
+    days: int = 7,
+    label: Optional[str] = 'ai-newsletter',
+    from_email: Optional[str] = None,
+    to_email: Optional[str] = None
+) -> List[Dict[str, Any]]:
     """Get emails matching label, date, and optional from/to filters."""
     date_from = (datetime.datetime.now() - datetime.timedelta(days=days)).strftime('%Y/%m/%d')
     query_parts = [f"after:{date_from}"]

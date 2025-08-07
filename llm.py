@@ -1,3 +1,4 @@
+from __future__ import annotations
 import os
 import re
 import anthropic
@@ -13,7 +14,15 @@ from utils import clean_body
 import requests
 import json
 
-def analyze_newsletters_unified(newsletters, num_topics=10, provider='openai', model=None):
+from typing import List, Tuple, Dict, Any, Optional
+
+
+def analyze_newsletters_unified(
+    newsletters: List[Dict[str, Any]],
+    num_topics: int = 10,
+    provider: str = 'openai',
+    model: Optional[str] = None
+) -> Tuple[str, List[str]]:
     """
     Process newsletters in a single step - identifying topics and generating summaries.
     Now with OpenRouter support and custom model option.

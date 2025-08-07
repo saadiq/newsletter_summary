@@ -1,8 +1,10 @@
+from __future__ import annotations
 import re
+from typing import Optional
 from bs4 import BeautifulSoup
 from html_to_markdown import convert_to_markdown
 
-def clean_body(html, body_format=None):
+def clean_body(html: Optional[str], body_format: Optional[str] = None) -> str:
     try:
         soup = BeautifulSoup(html, "html.parser")
         for tag in soup(['style', 'script', 'meta', 'link']):

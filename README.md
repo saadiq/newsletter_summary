@@ -132,11 +132,16 @@ The AI Newsletter Summarizer is a Python tool designed to automatically retrieve
 
 ### Custom Output Directory
 
-To save reports to a custom directory, set the `NEWSLETTER_SUMMARY_OUTPUT_DIR` environment variable:
+You can specify a custom output directory either via CLI or environment variable:
 
-```bash
-export NEWSLETTER_SUMMARY_OUTPUT_DIR=/path/to/output
-```
+- CLI flag:
+  ```bash
+  python main.py --output /path/to/output
+  ```
+- Environment variable:
+  ```bash
+  export NEWSLETTER_SUMMARY_OUTPUT_DIR=/path/to/output
+  ```
 
 ### Mock Data for Testing
 
@@ -296,7 +301,7 @@ The tool caches detected newsletter websites for each source and marks them as *
     - Lets you maintain high-quality, human-verified source links.
 
 3. **How to extend the curated mapping:**
-    - Edit the `curated_websites` dictionary in `report.py` to add or update known newsletters and their homepages. These are always trusted and override guesses.
+    - Create or edit `curated_websites.json` (key: newsletter name, value: url). Entries override guesses and are treated as verified.
 
 ## Troubleshooting
 

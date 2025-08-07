@@ -1,13 +1,21 @@
+from __future__ import annotations
 import re
 from collections import Counter
 import datetime
 import json
 import os
+from typing import Dict, List, Tuple, Any
 from urllib.parse import urlparse
 from email.utils import parsedate_to_datetime
 from datetime import datetime as _RealDatetime, timedelta as _RealTimedelta
 
-def generate_report(newsletters, topics, llm_analysis, days, model_info=None):
+def generate_report(
+    newsletters: List[Dict[str, Any]],
+    topics: List[str],
+    llm_analysis: str,
+    days: int,
+    model_info: Dict[str, Any] | None = None
+) -> Tuple[str, str]:
     """Generate a final report with key insights."""
     newsletter_sources = Counter([nl['sender'] for nl in newsletters])
     newsletter_dates = []
@@ -105,12 +113,14 @@ def generate_report(newsletters, topics, llm_analysis, days, model_info=None):
         report += breaking_news_section
     # Load or initialize website cache
     website_cache_path = 'newsletter_websites.json'
+    curated_path = 'curated_websites.json'
     if os.path.exists(website_cache_path):
         with open(website_cache_path, 'r') as f:
             website_cache = json.load(f)
     else:
         website_cache = {}
     # Curated mapping for known newsletters (extend as needed)
+    # Curated websites may live in an external JSON file for easy extension
     curated_websites = {
         'the neuron': 'https://www.theneurondaily.com',
         'tldr ai': 'https://www.tldrnewsletter.com',
@@ -122,8 +132,15 @@ def generate_report(newsletters, topics, llm_analysis, days, model_info=None):
         'unwind ai': 'https://unwindai.com',
         'simon willison': 'https://simonwillison.net',
         'peter yang': 'https://creatoreconomy.so',
-        # Add more as needed
     }
+    if os.path.exists(curated_path):
+        try:
+            with open(curated_path, 'r') as f:
+                curated_loaded = json.load(f)
+            if isinstance(curated_loaded, dict):
+                curated_websites.update({k.lower(): v for k, v in curated_loaded.items() if isinstance(k, str) and isinstance(v, str)})
+        except Exception:
+            pass
     def normalize(text):
         return re.sub(r'[^a-z0-9]', '', text.lower())
     def domain_from_email(email):

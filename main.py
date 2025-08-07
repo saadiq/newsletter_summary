@@ -48,6 +48,8 @@ def main():
                         help='Only include emails sent to this recipient email address (optional)')
     parser.add_argument('--num-topics', type=int, default=10,
                         help='Number of topics to extract and summarize (default: 10)')
+    parser.add_argument('--output', type=str, default=None,
+                        help='Output directory for the report (overrides NEWSLETTER_SUMMARY_OUTPUT_DIR)')
     parser.set_defaults(prioritize_recent=True, breaking_news_section=True)
     args = parser.parse_args()
     try:
@@ -106,7 +108,7 @@ def main():
             report, filename_date_range = generate_report(newsletters, topics, llm_analysis, args.days, model_info)
         
         report_filename = f"ai_newsletter_summary_{filename_date_range}.md"
-        output_dir = os.environ.get("NEWSLETTER_SUMMARY_OUTPUT_DIR", "")
+        output_dir = args.output or os.environ.get("NEWSLETTER_SUMMARY_OUTPUT_DIR", "")
         if output_dir:
             os.makedirs(output_dir, exist_ok=True)
             report_filename = os.path.join(output_dir, report_filename)
