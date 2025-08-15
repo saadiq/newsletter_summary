@@ -10,7 +10,7 @@ The AI Newsletter Summarizer is a Python tool designed to automatically retrieve
 - Automatically fetches emails tagged with "ai-newsletter" from your Gmail account
 - Extracts and analyzes content from multiple newsletter sources
 - Identifies key topics and trends across newsletters using advanced LLM techniques
-- Uses OpenRouter to route requests to either OpenAI GPT-4.1 (default) or Anthropic's Claude 3.7 Sonnet for cost-efficient API usage and tracking
+- Uses OpenRouter to route requests to Google Gemini 2.5 Flash (default), OpenAI GPT-4.1, or Anthropic's Claude 3.7 Sonnet for cost-efficient API usage and tracking
 - Prioritizes recent content and breaking news (configurable)
 - Outputs a markdown report with the top AI developments, why they matter, and actionable insights
 - Includes links to newsletter sources and a brief methodology section
@@ -142,11 +142,14 @@ After installation:
 # Validate configuration
 python config_validator.py
 
-# Run with defaults (7 days, OpenAI via OpenRouter)
+# Run with defaults (7 days, Google Gemini via OpenRouter)
 python main.py
 
 # Use Claude instead
 python main.py --llm-provider claude
+
+# Use OpenAI GPT-4.1 instead
+python main.py --llm-provider openai
 
 # Analyze last 14 days
 python main.py --days 14
@@ -173,11 +176,16 @@ python main.py --days 14
     python main.py
     ```
 
-    By default, this analyzes newsletters from the past 7 days using OpenRouter to connect to OpenAI GPT-4.1. See Command-line Options below to customize.
+    By default, this analyzes newsletters from the past 7 days using OpenRouter to connect to Google Gemini 2.5 Flash. See Command-line Options below to customize.
 
-    **Example: Use Claude 3.7 Sonnet instead of OpenAI (default):**
+    **Example: Use Claude 3.7 Sonnet instead of Google Gemini (default):**
     ```bash
     python main.py --llm-provider claude
+    ```
+    
+    **Example: Use OpenAI GPT-4.1 instead of default:**
+    ```bash
+    python main.py --llm-provider openai
     ```
     
     **Example: Use a specific custom OpenRouter model:**
@@ -252,9 +260,10 @@ You can modify the tool's behavior using these optional flags:
     python main.py --to-email yourname@gmail.com
     ```
 
--   `--llm-provider PROVIDER`: Choose between `claude`, `openai` (default), or `google`.
+-   `--llm-provider PROVIDER`: Choose between `google` (default), `claude`, or `openai`.
     ```bash
-    python main.py --llm-provider claude
+    python main.py --llm-provider claude  # Use Claude
+    python main.py --llm-provider openai  # Use OpenAI GPT-4.1
     ```
 
 -   `--model MODEL`: Specify a custom OpenRouter model to use (overrides --llm-provider).

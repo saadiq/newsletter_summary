@@ -83,9 +83,9 @@ OPENAI_API_KEY=your_key
 
 ### Model Selection Logic
 
-The `--llm-provider` flag maps to specific models:
-- With OpenRouter: `claude` → `anthropic/claude-sonnet-4`, `openai` → `openai/gpt-4.1-mini`
-- Direct APIs: `claude` → `claude-3-7-sonnet-20250219`, `openai` → `gpt-4.1-2025-04-14`
+The `--llm-provider` flag maps to specific models (default is `google`):
+- With OpenRouter: `google` → `google/gemini-2.5-flash` (default), `claude` → `anthropic/claude-sonnet-4`, `openai` → `openai/gpt-4.1-mini`
+- Direct APIs: `google` → `gemini-2.5-flash-preview`, `claude` → `claude-3-7-sonnet-20250219`, `openai` → `gpt-4.1-2025-04-14`
 - Custom models via `--model` parameter override these presets
 
 ### Testing Strategy

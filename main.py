@@ -34,8 +34,8 @@ def main():
                         help='Add a separate "Just In" section for latest newsletters (default: enabled)')
     parser.add_argument('--no-breaking-news-section', dest='breaking_news_section', action='store_false',
                         help='Do not add a separate "Just In" section')
-    parser.add_argument('--llm-provider', choices=['claude', 'openai', 'google'], default='openai',
-                        help='LLM provider for summarization: claude (Claude 3.7 Sonnet), openai (GPT-4.1), or google (Gemini 2.0 Flash)')
+    parser.add_argument('--llm-provider', choices=['claude', 'openai', 'google'], default='google',
+                        help='LLM provider for summarization: claude (Claude 3.7 Sonnet), openai (GPT-4.1), or google (Gemini 2.5 Flash - default)')
     parser.add_argument('--model', type=str, default=None,
                         help='Specify a custom OpenRouter model (e.g., "google/gemini-2.5-flash-preview:thinking") overriding the provider selection')
     parser.add_argument('--label', type=str, default='ai-newsletter',
