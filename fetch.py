@@ -4,8 +4,6 @@ import base64
 import re
 from tqdm import tqdm
 import time
-from concurrent.futures import ThreadPoolExecutor, as_completed
-import threading
 
 def retry_with_backoff(max_retries: int = 3, base_delay: float = 1.0):
     """Decorator for retrying functions with exponential backoff."""
@@ -27,7 +25,7 @@ def retry_with_backoff(max_retries: int = 3, base_delay: float = 1.0):
     return decorator
 
 @retry_with_backoff(max_retries=3, base_delay=0.5)
-def fetch_single_newsletter(service, message_id: str, pbar_lock: threading.Lock = None, pbar = None) -> Optional[Dict[str, Any]]:
+def fetch_single_newsletter(service, message_id: str, pbar_lock = None, pbar = None) -> Optional[Dict[str, Any]]:
     """Fetch a single newsletter with error handling."""
     try:
         msg = service.users().messages().get(userId='me', id=message_id, format='full').execute()
@@ -56,9 +54,12 @@ def fetch_single_newsletter(service, message_id: str, pbar_lock: threading.Lock 
             body = base64.urlsafe_b64decode(payload['body']['data']).decode('utf-8')
             body_format = 'plain'
         
-        # Update progress bar in thread-safe manner
-        if pbar and pbar_lock:
-            with pbar_lock:
+        # Update progress bar
+        if pbar:
+            if pbar_lock:
+                with pbar_lock:
+                    pbar.update(1)
+            else:
                 pbar.update(1)
         
         return {
@@ -72,8 +73,11 @@ def fetch_single_newsletter(service, message_id: str, pbar_lock: threading.Lock 
         }
     except Exception as e:
         # Update progress bar even on failure
-        if pbar and pbar_lock:
-            with pbar_lock:
+        if pbar:
+            if pbar_lock:
+                with pbar_lock:
+                    pbar.update(1)
+            else:
                 pbar.update(1)
         
         return {
@@ -96,7 +100,7 @@ def get_ai_newsletters(
 ) -> List[Dict[str, Any]]:
     """Get emails matching label, date, and optional from/to filters.
     
-    Now with parallel fetching and error resilience.
+    Fetches newsletters sequentially with error resilience.
     """
     date_from = (datetime.datetime.now() - datetime.timedelta(days=days)).strftime('%Y/%m/%d')
     query_parts = [f"after:{date_from}"]
@@ -123,53 +127,30 @@ def get_ai_newsletters(
     if not messages:
         return []
     
-    # Fetch newsletters in parallel
+    # Fetch newsletters sequentially - simpler and more reliable
     newsletters = []
     failed_fetches = []
-    
-    # Thread-safe progress bar
-    pbar_lock = threading.Lock()
-    
-    # Allow environment variable to control parallel workers (for GitHub Actions)
-    import os
-    max_workers = int(os.environ.get('NEWSLETTER_PARALLEL_WORKERS', '5'))
-    
-    # In GitHub Actions, use sequential processing for large batches to avoid memory issues
-    if os.environ.get('GITHUB_ACTIONS') and len(messages) > 20:
-        max_workers = 1  # Sequential processing for large batches in CI
-    
     with tqdm(total=len(messages), desc="Fetching newsletters", unit="email") as pbar:
-        with ThreadPoolExecutor(max_workers=max_workers) as executor:
-            # Submit all fetch tasks
-            future_to_message = {
-                executor.submit(fetch_single_newsletter, service, msg['id'], pbar_lock, pbar): msg['id'] 
-                for msg in messages
-            }
-            
-            # Collect results as they complete
-            for future in as_completed(future_to_message):
-                message_id = future_to_message[future]
-                try:
-                    # Shorter timeout in GitHub Actions to prevent hanging
-                    timeout = 10 if os.environ.get('GITHUB_ACTIONS') else 30
-                    newsletter = future.result(timeout=timeout)
-                    if newsletter:
-                        if newsletter['status'] == 'success':
-                            # Remove status and error fields for successful fetches
-                            newsletter.pop('status', None)
-                            newsletter.pop('error', None)
-                            newsletter.pop('id', None)
-                            newsletters.append(newsletter)
-                        else:
-                            failed_fetches.append({
-                                'id': message_id,
-                                'error': newsletter.get('error', 'Unknown error')
-                            })
-                except Exception as e:
-                    failed_fetches.append({
-                        'id': message_id,
-                        'error': f"Timeout or exception: {str(e)}"
-                    })
+        for msg in messages:
+            try:
+                newsletter = fetch_single_newsletter(service, msg['id'], None, pbar)
+                if newsletter:
+                    if newsletter['status'] == 'success':
+                        # Remove status and error fields for successful fetches
+                        newsletter.pop('status', None)
+                        newsletter.pop('error', None)
+                        newsletter.pop('id', None)
+                        newsletters.append(newsletter)
+                    else:
+                        failed_fetches.append({
+                            'id': msg['id'],
+                            'error': newsletter.get('error', 'Unknown error')
+                        })
+            except Exception as e:
+                failed_fetches.append({
+                    'id': msg['id'],
+                    'error': f"Exception: {str(e)}"
+                })
     
     # Report failures if any
     if failed_fetches:
