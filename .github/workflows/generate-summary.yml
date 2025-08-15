@@ -90,13 +90,9 @@ jobs:
     - name: Generate newsletter summary
       env:
         OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
-        # Limit parallel workers to avoid segfault in GitHub Actions
-        NEWSLETTER_PARALLEL_WORKERS: "1"  # Sequential processing to avoid memory issues
+        # Sequential processing for reliability in GitHub Actions
+        NEWSLETTER_PARALLEL_WORKERS: "1"
       run: |
-        # Configure git identity before running (in case commit happens)
-        git config --global user.name 'github-actions[bot]'
-        git config --global user.email 'github-actions[bot]@users.noreply.github.com'
-        
         # Debug: Test Gmail authentication
         python -c "from auth import authenticate_gmail; service = authenticate_gmail(); print('Gmail auth successful')" || echo "Gmail auth failed"
         
@@ -106,8 +102,7 @@ jobs:
         python main.py \
           --days ${{ github.event.inputs.days || '7' }} \
           --label "${{ github.event.inputs.label || 'ai-newsletter' }}" \
-          --output docs/_posts \
-          --commit || {
+          --output docs/_posts || {
             echo "ERROR: Newsletter summary generation failed!"
             echo "Check the logs above for details."
             echo "Common issues:"
@@ -117,14 +112,28 @@ jobs:
             exit 1
         }
     
-    - name: Configure Git
+    - name: Commit and push changes
       run: |
         git config --global user.name 'github-actions[bot]'
         git config --global user.email 'github-actions[bot]@users.noreply.github.com'
-    
-    - name: Push changes
-      run: |
-        git push origin main
+        
+        # Check if there are changes to commit
+        if git diff --quiet && git diff --staged --quiet; then
+          echo "No changes to commit"
+        else
+          # Add all changes in docs/_posts
+          git add docs/_posts/
+          
+          # Create commit with date
+          COMMIT_DATE=$(date +"%Y-%m-%d")
+          git commit -m "Add AI newsletter summary for $COMMIT_DATE
+
+Generated automatically by GitHub Actions"
+          
+          # Push changes
+          git push origin main
+          echo "Successfully committed and pushed newsletter summary"
+        fi
     
     - name: Deploy to GitHub Pages
       if: success()

@@ -50,10 +50,7 @@ def main():
                         help='Number of topics to extract and summarize (default: 10)')
     parser.add_argument('--output', type=str, default='docs/_posts',
                         help='Output directory for the report (default: docs/_posts for GitHub Pages)')
-    parser.add_argument('--commit', action='store_true',
-                        help='Automatically commit the generated report to git')
-    parser.add_argument('--push', action='store_true',
-                        help='Push the commit to remote repository (implies --commit)')
+    # Git operations removed - handled by GitHub Actions for reliability
     parser.set_defaults(prioritize_recent=True, breaking_news_section=True)
     args = parser.parse_args()
     try:
@@ -153,27 +150,8 @@ def main():
             f.write(report)
         print(f"Report saved to {report_filename}")
         
-        # Auto-commit and push if requested
-        if args.push:
-            args.commit = True  # Push implies commit
-        
-        if args.commit:
-            import subprocess
-            try:
-                # Add the report file
-                subprocess.run(['git', 'add', report_filename], check=True)
-                
-                # Create commit message
-                commit_msg = f"Add {used_label} newsletter summary for {post_date}"
-                subprocess.run(['git', 'commit', '-m', commit_msg], check=True)
-                print(f"Committed report: {commit_msg}")
-                
-                if args.push:
-                    subprocess.run(['git', 'push'], check=True)
-                    print("Pushed to remote repository")
-            except subprocess.CalledProcessError as e:
-                print(f"Git operation failed: {e}")
-                print("Report was saved but not committed/pushed")
+        # Git operations are handled by GitHub Actions or manually by the user
+        # This prevents lock file issues from interrupted git processes
     except ImportError as e:
         print(f"\nMissing dependency: {str(e)}")
         print("Please install required packages: pip install -r requirements.txt")
