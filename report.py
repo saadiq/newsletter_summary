@@ -56,7 +56,7 @@ def generate_report(
             approx = approx.replace(hour=10, minute=30, second=0, microsecond=0)
             run_time_str = approx.strftime('%Y-%m-%d %H:%M')
             run_time_file_str = approx.strftime('%Y%m%d_%H%M')
-        date_range = f"## {earliest_date.strftime('%B %d')} to {latest_date.strftime('%B %d, %Y, %H:%M')} (summary run at {run_time_str})"
+        date_range = f"**{earliest_date.strftime('%B %d')}–{latest_date.strftime('%B %d, %Y')}** • {len(newsletters)} newsletters analyzed"
         filename_date_range = f"{run_time_file_str}_from_{earliest_date.strftime('%Y%m%d')}"
     else:
         run_time = datetime.datetime.now()
@@ -72,10 +72,23 @@ def generate_report(
             approx = approx.replace(hour=10, minute=30, second=0, microsecond=0)
             run_time_str = approx.strftime('%Y-%m-%d %H:%M')
             run_time_file_str = approx.strftime('%Y%m%d_%H%M')
-        date_range = f"## Week of {earliest_date.strftime('%B %d')} to {run_time.strftime('%B %d, %Y, %H:%M')} (summary run at {run_time_str})"
+        date_range = f"**Week of {earliest_date.strftime('%B %d')}–{run_time.strftime('%B %d, %Y')}** • {len(newsletters)} newsletters analyzed"
         filename_date_range = f"{run_time_file_str}_from_{earliest_date.strftime('%Y%m%d')}"
     
-    # Create Jekyll frontmatter
+    # Create Jekyll frontmatter with improved excerpt
+    # Extract key topics from the analysis for a more informative excerpt
+    excerpt_topics = []
+    if llm_analysis:
+        # Try to extract main topics from the numbered sections
+        topic_matches = re.findall(r'### \d+\. ([^\n]+)', llm_analysis[:2000])  # Look in first 2000 chars
+        if topic_matches:
+            excerpt_topics = topic_matches[:3]  # Get first 3 topics
+    
+    if excerpt_topics:
+        excerpt = f"Key AI developments: {', '.join(excerpt_topics[:2])}{'...' if len(excerpt_topics) > 2 else ''} from {len(newsletters)} newsletters."
+    else:
+        excerpt = f"Analysis of {len(newsletters)} AI newsletters covering the latest developments in artificial intelligence."
+    
     frontmatter = f"""---
 layout: post
 title: "{label.replace('-', ' ').title()} Summary - {latest_date.strftime('%B %d, %Y')}"
@@ -83,7 +96,7 @@ date: {run_time.strftime('%Y-%m-%d %H:%M:%S')} +0000
 label: {label}
 model: {model_info.get('model', 'unknown') if model_info else 'unknown'}
 newsletter_count: {len(newsletters)}
-excerpt: "AI newsletter summary covering {len(topics)} key topics from {len(newsletters)} newsletters analyzed on {run_time.strftime('%B %d, %Y')}."
+excerpt: "{excerpt}"
 ---
 
 """
@@ -111,18 +124,9 @@ excerpt: "AI newsletter summary covering {len(topics)} key topics from {len(news
             else:
                 breaking_news_section += f"- {clean_subject} (via {nl['sender'].split('<')[0].strip()})\n"
     
-    # Format the model information with a stylized header
-    model_section = ""
-    if model_info:
-        model_name = model_info["model"]
-        
-        # Add model section to the report
-        model_section = f"## Generated with {model_name}\n\n"
-    
-    # Build report content
+    # Build report content - start directly with date range and main content
     report_body = f"""\
-# {label.replace('-', ' ').title().replace('Ai ', 'AI ')} SUMMARY
-{model_section}{date_range}
+{date_range}
 
 ## TOP AI DEVELOPMENTS THIS WEEK
 
