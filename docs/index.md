@@ -53,7 +53,10 @@ posts.forEach(post => {
 const filterContainer = document.getElementById('label-filters');
 labels.forEach(label => {
     const btn = document.createElement('button');
-    btn.textContent = label.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+    // Format label text: replace hyphens with spaces, capitalize words, fix "AI"
+    let labelText = label.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+    labelText = labelText.replace(/\bAi\b/g, 'AI');  // Fix "Ai" to "AI"
+    btn.textContent = labelText;
     btn.onclick = () => filterPosts(label);
     btn.className = 'filter-btn';
     filterContainer.appendChild(btn);
