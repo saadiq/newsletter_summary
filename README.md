@@ -473,6 +473,124 @@ To run with coverage:
 pytest --cov=. --cov-report=html
 ```
 
+## GitHub Pages Automated Publishing
+
+This project includes full GitHub Actions automation for weekly newsletter summaries published to GitHub Pages.
+
+### Setting Up GitHub Pages
+
+1. **Enable GitHub Pages**
+   - Go to your repository on GitHub
+   - Navigate to Settings → Pages
+   - Under "Source", select "Deploy from a branch"
+   - Choose `gh-pages` branch and `/ (root)` folder
+   - Click Save
+
+2. **Prepare Gmail Secrets**
+   
+   First, generate properly formatted secrets from your local credentials:
+   
+   ```bash
+   python prepare_github_secrets.py
+   ```
+   
+   This creates a `github_secrets.txt` file with your credentials properly formatted for GitHub.
+
+3. **Add GitHub Secrets**
+   
+   Go to your repository → Settings → Secrets and variables → Actions, then add these repository secrets:
+   
+   - **GMAIL_CREDENTIALS**: Copy the entire JSON content from `github_secrets.txt` (the part between the dashed lines for GMAIL_CREDENTIALS)
+   - **GMAIL_TOKEN**: Copy the entire JSON content from `github_secrets.txt` (the part between the dashed lines for GMAIL_TOKEN)
+   - **OPENROUTER_API_KEY**: Your OpenRouter API key
+   
+   **Important**: Make sure you're adding "Repository secrets" not "Environment secrets"
+
+4. **Delete Sensitive Files**
+   
+   After adding secrets to GitHub, delete the temporary file:
+   
+   ```bash
+   rm github_secrets.txt
+   ```
+
+### GitHub Actions Workflow
+
+The included workflow (`.github/workflows/generate-summary.yml`) automatically:
+
+- **Runs weekly**: Every Sunday at 10 AM UTC
+- **Fetches newsletters**: From the past 7 days with the `ai-newsletter` label
+- **Generates summaries**: Using your configured LLM provider
+- **Commits reports**: To `docs/_posts/` with proper Jekyll frontmatter
+- **Publishes to GitHub Pages**: Automatically deploys to your site
+
+### Manual Workflow Runs
+
+You can also trigger the workflow manually:
+
+1. Go to Actions tab in your repository
+2. Select "Generate Newsletter Summary"
+3. Click "Run workflow"
+4. Optionally customize:
+   - **days**: Number of days to look back (default: 7)
+   - **label**: Gmail label to filter (default: ai-newsletter)
+
+### Viewing Your Published Site
+
+After the workflow runs successfully:
+
+1. Your site will be available at: `https://[username].github.io/newsletter_summary/`
+2. Reports are automatically organized by date
+3. The site includes:
+   - Dark/light mode toggle
+   - Filter by newsletter labels
+   - Clean, professional styling
+   - Mobile-responsive design
+
+### Troubleshooting GitHub Actions
+
+**Common Issues:**
+
+1. **"Permission denied" errors**
+   - Already fixed in the workflow with proper permissions
+   - If issues persist, check Settings → Actions → General → Workflow permissions
+
+2. **"Invalid JSON" in secrets**
+   - Use `prepare_github_secrets.py` to ensure proper formatting
+   - Secrets must be valid JSON without any extra characters
+
+3. **"No newsletters found"**
+   - Check that your Gmail token hasn't expired
+   - Verify the label exists in your Gmail account
+   - Try running locally first to ensure authentication works
+
+4. **Memory/Segmentation faults**
+   - The workflow is optimized for GitHub Actions with:
+     - Sequential processing for large batches
+     - Memory limits to prevent crashes
+     - Automatic retry logic
+
+### Customizing the Workflow
+
+Edit `.github/workflows/generate-summary.yml` to:
+
+- Change schedule (modify the cron expression)
+- Adjust default parameters
+- Add additional steps
+- Configure different deployment targets
+
+### Local Testing Before Deployment
+
+Test the full automation locally:
+
+```bash
+# Generate a report with commit flag
+python main.py --commit
+
+# Push to trigger GitHub Pages build
+git push origin main
+```
+
 ## Contributing
 
 Contributions are welcome! Feel free to submit a Pull Request.
