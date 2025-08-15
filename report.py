@@ -91,7 +91,7 @@ def generate_report(
     
     frontmatter = f"""---
 layout: post
-title: "{label.replace('-', ' ').title()} Summary - {latest_date.strftime('%B %d, %Y')}"
+title: "{label.replace('-', ' ').title().replace('Ai ', 'AI ')} Summary - {latest_date.strftime('%B %d, %Y')}"
 date: {run_time.strftime('%Y-%m-%d %H:%M:%S')} +0000
 label: {label}
 model: {model_info.get('model', 'unknown') if model_info else 'unknown'}
