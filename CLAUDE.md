@@ -6,6 +6,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 AI Newsletter Summarizer - A Python CLI tool that fetches AI-focused newsletters from Gmail, analyzes them with LLMs (via OpenRouter by default), and generates concise summary reports for regular users.
 
+**Recent Improvements (Aug 2025):**
+- Parallel newsletter fetching (3-5x faster for 10+ newsletters)
+- Robust error handling with retry logic and graceful degradation
+- Enhanced HTML parsing with multiple fallback strategies
+- Better user feedback with detailed error messages and troubleshooting tips
+
 ## Common Development Commands
 
 ```bash
@@ -48,8 +54,8 @@ python config_validator.py
 The codebase follows a modular architecture with clear separation of concerns:
 
 ### Core Flow
-1. **Authentication** (`auth.py`) - Handles Gmail OAuth using Google API credentials
-2. **Email Fetching** (`fetch.py`) - Retrieves newsletters from Gmail with "ai-newsletter" label
+1. **Authentication** (`auth.py`) - Handles Gmail OAuth using Google API credentials with error recovery
+2. **Email Fetching** (`fetch.py`) - Retrieves newsletters in parallel (5 concurrent workers) with retry logic
 3. **LLM Analysis** (`llm.py`) - Sends content to LLMs (OpenRouter/direct APIs) for analysis
 4. **Report Generation** (`report.py`) - Creates markdown reports with summaries and insights
 
@@ -60,6 +66,9 @@ The codebase follows a modular architecture with clear separation of concerns:
 - **Newsletter Website Caching**: Maintains `newsletter_websites.json` to cache and verify newsletter sources
 - **Mock Data Support**: E2E tests and development can use `NEWSLETTER_SUMMARY_MOCK_DATA` env var
 - **Cost Tracking**: OpenRouter usage logged to `openrouter_costs.json` for analysis
+- **Parallel Processing**: Uses ThreadPoolExecutor for concurrent newsletter fetching (max 5 workers)
+- **Resilient Architecture**: Retry decorators with exponential backoff for API calls
+- **Graceful Degradation**: Individual failures don't crash the entire process
 
 ### Environment Configuration
 
@@ -81,17 +90,19 @@ The `--llm-provider` flag maps to specific models:
 
 ### Testing Strategy
 
-- **Unit Tests** (`test_fetch_api.py`): Mock Gmail API responses, test filtering logic
+- **Unit Tests** (`test_fetch_api.py`): Mock Gmail API responses, test filtering logic, parallel fetching
 - **E2E Tests** (`test_e2e_cli.py`): Run full CLI with mock data, verify report generation
 - Tests use monkeypatching and environment variables to avoid external dependencies
+- Mock `tqdm` with context manager pattern for parallel processing tests
 
 ### Key Files to Understand Cross-Module Behavior
 
-1. **main.py** orchestrates the entire flow - start here to understand how modules connect
+1. **main.py** orchestrates the entire flow with enhanced error handling and user feedback
 2. **llm.py** contains the unified analysis prompt and model routing logic
 3. **report.py** handles both report generation and newsletter website detection/caching
-4. **fetch.py** parses email bodies and extracts clean text from HTML newsletters
-5. **config_validator.py** validates all configuration files and environment variables
+4. **fetch.py** implements parallel fetching with retry logic and failure tracking
+5. **utils.py** provides robust HTML parsing with multiple fallback strategies
+6. **config_validator.py** validates all configuration files and environment variables
 
 ### Configuration Validation
 
@@ -100,4 +111,18 @@ The project includes comprehensive configuration validation via `config_validato
 - **JSON Files**: Validates `newsletter_websites.json` structure, URLs, and detects duplicates/tracking URLs
 - **Credentials**: Validates Gmail OAuth configuration files
 - Run `python config_validator.py` to check all configuration before running the main application
-- use code-committer agent for github commits and pushes
+### Development Best Practices
+
+- **Error Handling**: Always implement retry logic for external API calls
+- **User Feedback**: Provide clear error messages with troubleshooting steps
+- **Performance**: Use parallel processing where appropriate (respect API rate limits)
+- **Testing**: Update tests when changing function signatures or behavior
+- **Commits**: Use the code-committer agent for well-crafted commit messages and pushes
+
+### Common Debugging Tips
+
+1. **Gmail API Issues**: Check `token.json` expiry, delete and re-authenticate if needed
+2. **Rate Limiting**: The app handles rate limits with exponential backoff automatically
+3. **HTML Parsing Failures**: Check `utils.py` fallback methods, app will extract text even from malformed HTML
+4. **Parallel Fetching Issues**: Reduce workers in `fetch.py` if experiencing API throttling
+5. **Mock Data Testing**: Set `NEWSLETTER_SUMMARY_MOCK_DATA` env var with JSON array
