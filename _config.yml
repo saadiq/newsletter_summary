@@ -1,0 +1,35 @@
+# Jekyll configuration for Newsletter Summary Reports
+title: AI Newsletter Summaries
+description: Automated summaries of AI newsletters using LLMs
+author: Saadiq Shaikh
+email: saadiq@example.com
+baseurl: "/newsletter_summary"
+url: "https://saadiq.github.io"
+
+# Build settings
+theme: minima
+markdown: kramdown
+plugins:
+  - jekyll-feed
+  - jekyll-seo-tag
+
+# Collections
+collections:
+  posts:
+    output: true
+    permalink: /:year/:month/:day/:title/
+
+# Defaults
+defaults:
+  - scope:
+      path: ""
+      type: "posts"
+    values:
+      layout: "post"
+      author: "AI Newsletter Summarizer"
+
+# Exclude files from build
+exclude:
+  - Gemfile
+  - Gemfile.lock
+  - README.md

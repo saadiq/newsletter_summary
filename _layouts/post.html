@@ -1,0 +1,26 @@
+---
+layout: default
+---
+
+<article class="post">
+    <header class="post-header">
+        <h1>{{ page.title }}</h1>
+        <div class="post-meta">
+            <span class="label-tag">{{ page.label }}</span>
+            <time datetime="{{ page.date | date_to_xmlschema }}">
+                {{ page.date | date: "%B %d, %Y" }}
+            </time>
+            {% if page.model %}
+            <span> • Model: {{ page.model }}</span>
+            {% endif %}
+        </div>
+    </header>
+
+    <div class="post-content">
+        {{ content }}
+    </div>
+
+    <nav class="post-nav">
+        <a href="{{ site.baseurl }}/">← Back to all summaries</a>
+    </nav>
+</article>

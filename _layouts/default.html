@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% if page.title %}{{ page.title }} - {% endif %}{{ site.title }}</title>
+    <meta name="description" content="{{ page.excerpt | default: site.description | strip_html | normalize_whitespace | truncate: 160 | escape }}">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/water.css@2/out/water.css">
+    <style>
+        body {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        .site-header {
+            border-bottom: 2px solid #ddd;
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+        }
+        .site-nav {
+            margin: 1rem 0;
+        }
+        .site-nav a {
+            margin-right: 1rem;
+        }
+        .post-list {
+            list-style: none;
+            padding: 0;
+        }
+        .post-item {
+            margin-bottom: 2rem;
+            padding: 1rem;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+        }
+        .post-meta {
+            color: #666;
+            font-size: 0.9em;
+        }
+        .label-tag {
+            display: inline-block;
+            padding: 0.2rem 0.5rem;
+            background: #007bff;
+            color: white;
+            border-radius: 4px;
+            font-size: 0.85em;
+            margin-right: 0.5rem;
+        }
+        .filter-section {
+            margin: 2rem 0;
+            padding: 1rem;
+            background: #f5f5f5;
+            border-radius: 8px;
+        }
+        .footer {
+            margin-top: 3rem;
+            padding-top: 2rem;
+            border-top: 1px solid #ddd;
+            text-align: center;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <header class="site-header">
+        <h1><a href="{{ site.baseurl }}/" style="text-decoration: none; color: inherit;">{{ site.title }}</a></h1>
+        <p>{{ site.description }}</p>
+        <nav class="site-nav">
+            <a href="{{ site.baseurl }}/">Home</a>
+            <a href="{{ site.baseurl }}/about">About</a>
+            <a href="https://github.com/saadiq/newsletter_summary">GitHub</a>
+        </nav>
+    </header>
+
+    <main>
+        {{ content }}
+    </main>
+
+    <footer class="footer">
+        <p>Generated with <a href="https://github.com/saadiq/newsletter_summary">Newsletter Summarizer</a></p>
+        <p>Powered by Jekyll and GitHub Pages</p>
+    </footer>
+</body>
+</html>
