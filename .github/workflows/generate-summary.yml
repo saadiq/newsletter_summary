@@ -90,14 +90,11 @@ jobs:
     - name: Generate newsletter summary
       env:
         OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
-        # Sequential processing for reliability in GitHub Actions
-        NEWSLETTER_PARALLEL_WORKERS: "1"
       run: |
         # Debug: Test Gmail authentication
         python -c "from auth import authenticate_gmail; service = authenticate_gmail(); print('Gmail auth successful')" || echo "Gmail auth failed"
         
-        # Run the summarizer with verbose output and memory limits
-        # Use sequential processing for large newsletter batches
+        # Run the summarizer with memory limits
         ulimit -v 2097152  # Limit virtual memory to 2GB
         python main.py \
           --days ${{ github.event.inputs.days || '7' }} \
