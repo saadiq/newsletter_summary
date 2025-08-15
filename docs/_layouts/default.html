@@ -1,84 +1,375 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="auto">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% if page.title %}{{ page.title }} - {% endif %}{{ site.title }}</title>
     <meta name="description" content="{{ page.excerpt | default: site.description | strip_html | normalize_whitespace | truncate: 160 | escape }}">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/water.css@2/out/water.css">
     <style>
+        :root {
+            /* Light mode colors */
+            --bg-primary: #ffffff;
+            --bg-secondary: #f8f9fa;
+            --bg-tertiary: #e9ecef;
+            --text-primary: #212529;
+            --text-secondary: #495057;
+            --text-tertiary: #6c757d;
+            --border-color: #dee2e6;
+            --accent-color: #495057;
+            --link-color: #0066cc;
+            --link-hover: #0052a3;
+            --code-bg: #f6f8fa;
+            --shadow: rgba(0, 0, 0, 0.1);
+        }
+
+        [data-theme="dark"] {
+            /* Dark mode colors */
+            --bg-primary: #0d1117;
+            --bg-secondary: #161b22;
+            --bg-tertiary: #21262d;
+            --text-primary: #c9d1d9;
+            --text-secondary: #8b949e;
+            --text-tertiary: #6e7681;
+            --border-color: #30363d;
+            --accent-color: #8b949e;
+            --link-color: #58a6ff;
+            --link-hover: #79c0ff;
+            --code-bg: #161b22;
+            --shadow: rgba(0, 0, 0, 0.3);
+        }
+
+        /* Auto theme - follows system preference */
+        @media (prefers-color-scheme: dark) {
+            [data-theme="auto"] {
+                --bg-primary: #0d1117;
+                --bg-secondary: #161b22;
+                --bg-tertiary: #21262d;
+                --text-primary: #c9d1d9;
+                --text-secondary: #8b949e;
+                --text-tertiary: #6e7681;
+                --border-color: #30363d;
+                --accent-color: #8b949e;
+                --link-color: #58a6ff;
+                --link-hover: #79c0ff;
+                --code-bg: #161b22;
+                --shadow: rgba(0, 0, 0, 0.3);
+            }
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
         body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            line-height: 1.6;
+            color: var(--text-primary);
+            background-color: var(--bg-primary);
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+
+        .container {
             max-width: 900px;
             margin: 0 auto;
             padding: 2rem;
         }
+
+        /* Header */
         .site-header {
-            border-bottom: 2px solid #ddd;
+            border-bottom: 2px solid var(--border-color);
             margin-bottom: 2rem;
             padding-bottom: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
         }
+
+        .site-header h1 {
+            font-size: 1.8rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .site-header h1 a {
+            text-decoration: none;
+            color: var(--text-primary);
+        }
+
+        .site-header p {
+            color: var(--text-secondary);
+            margin-bottom: 1rem;
+        }
+
+        .header-content {
+            flex: 1;
+        }
+
         .site-nav {
             margin: 1rem 0;
         }
+
         .site-nav a {
-            margin-right: 1rem;
+            margin-right: 1.5rem;
+            color: var(--link-color);
+            text-decoration: none;
+            transition: color 0.2s;
         }
-        .post-list {
-            list-style: none;
-            padding: 0;
+
+        .site-nav a:hover {
+            color: var(--link-hover);
         }
+
+        /* Theme Toggle */
+        .theme-toggle {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            padding: 0.4rem 0.8rem;
+            cursor: pointer;
+            font-size: 1.2rem;
+            transition: transform 0.2s;
+            margin-left: 1rem;
+        }
+
+        .theme-toggle:hover {
+            transform: scale(1.1);
+        }
+
+        /* Main content */
+        main {
+            min-height: calc(100vh - 300px);
+        }
+
+        h1, h2, h3, h4, h5, h6 {
+            margin-top: 1.5rem;
+            margin-bottom: 1rem;
+            color: var(--text-primary);
+        }
+
+        p {
+            margin-bottom: 1rem;
+        }
+
+        a {
+            color: var(--link-color);
+            text-decoration: none;
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+
+        /* Post list */
         .post-item {
             margin-bottom: 2rem;
-            padding: 1rem;
-            border: 1px solid #ddd;
+            padding: 1.5rem;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
             border-radius: 8px;
+            transition: box-shadow 0.2s;
         }
+
+        .post-item:hover {
+            box-shadow: 0 4px 12px var(--shadow);
+        }
+
+        .post-item h2 {
+            margin-top: 0;
+            margin-bottom: 0.5rem;
+        }
+
         .post-meta {
-            color: #666;
+            color: var(--text-secondary);
             font-size: 0.9em;
+            margin-bottom: 0.5rem;
         }
+
         .label-tag {
             display: inline-block;
-            padding: 0.2rem 0.5rem;
-            background: #007bff;
-            color: white;
+            padding: 0.2rem 0.6rem;
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
             border-radius: 4px;
             font-size: 0.85em;
             margin-right: 0.5rem;
         }
+
+        /* Filter section */
         .filter-section {
             margin: 2rem 0;
-            padding: 1rem;
-            background: #f5f5f5;
+            padding: 1.5rem;
+            background: var(--bg-secondary);
             border-radius: 8px;
+            border: 1px solid var(--border-color);
         }
+
+        .filter-section h3 {
+            margin-top: 0;
+            margin-bottom: 1rem;
+            color: var(--text-primary);
+        }
+
+        /* Code blocks */
+        pre, code {
+            background: var(--code-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
+        }
+
+        code {
+            padding: 0.2rem 0.4rem;
+            font-size: 0.9em;
+        }
+
+        pre {
+            padding: 1rem;
+            overflow-x: auto;
+            margin-bottom: 1rem;
+        }
+
+        pre code {
+            border: none;
+            padding: 0;
+            background: transparent;
+        }
+
+        /* Tables */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 1rem;
+        }
+
+        th, td {
+            padding: 0.75rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        th {
+            background: var(--bg-secondary);
+            font-weight: 600;
+        }
+
+        /* Footer */
         .footer {
             margin-top: 3rem;
             padding-top: 2rem;
-            border-top: 1px solid #ddd;
+            border-top: 1px solid var(--border-color);
             text-align: center;
-            color: #666;
+            color: var(--text-secondary);
+        }
+
+        .footer a {
+            color: var(--link-color);
+        }
+
+        /* Post navigation */
+        .post-nav {
+            margin-top: 2rem;
+            padding-top: 1rem;
+            border-top: 1px solid var(--border-color);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+
+            .site-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .theme-toggle {
+                margin-left: 0;
+                margin-top: 1rem;
+            }
+
+            .site-nav a {
+                display: inline-block;
+                margin-right: 1rem;
+                margin-bottom: 0.5rem;
+            }
         }
     </style>
 </head>
 <body>
-    <header class="site-header">
-        <h1><a href="{{ site.baseurl }}/" style="text-decoration: none; color: inherit;">{{ site.title }}</a></h1>
-        <p>{{ site.description }}</p>
-        <nav class="site-nav">
-            <a href="{{ site.baseurl }}/">Home</a>
-            <a href="{{ site.baseurl }}/about">About</a>
-            <a href="https://github.com/saadiq/newsletter_summary">GitHub</a>
-        </nav>
-    </header>
+    <div class="container">
+        <header class="site-header">
+            <div class="header-content">
+                <h1><a href="{{ site.baseurl }}/">{{ site.title }}</a></h1>
+                <p>{{ site.description }}</p>
+                <nav class="site-nav">
+                    <a href="{{ site.baseurl }}/">Home</a>
+                    <a href="{{ site.baseurl }}/about">About</a>
+                    <a href="https://github.com/saadiq/newsletter_summary">GitHub</a>
+                </nav>
+            </div>
+            <button class="theme-toggle" id="theme-toggle" title="Toggle theme">
+                <span class="theme-icon">🌙</span>
+            </button>
+        </header>
 
-    <main>
-        {{ content }}
-    </main>
+        <main>
+            {{ content }}
+        </main>
 
-    <footer class="footer">
-        <p>Generated with <a href="https://github.com/saadiq/newsletter_summary">Newsletter Summarizer</a></p>
-        <p>Powered by Jekyll and GitHub Pages</p>
-    </footer>
+        <footer class="footer">
+            <p>Generated with <a href="https://github.com/saadiq/newsletter_summary">Newsletter Summarizer</a></p>
+            <p>Powered by Jekyll and GitHub Pages</p>
+        </footer>
+    </div>
+
+    <script>
+        // Theme management
+        const html = document.documentElement;
+        const themeToggle = document.getElementById('theme-toggle');
+        const themeIcon = themeToggle.querySelector('.theme-icon');
+
+        // Get saved theme or default to 'auto'
+        let currentTheme = localStorage.getItem('theme') || 'auto';
+
+        // Apply saved theme
+        html.setAttribute('data-theme', currentTheme);
+        updateThemeIcon();
+
+        // Toggle theme
+        themeToggle.addEventListener('click', () => {
+            const themes = ['auto', 'light', 'dark'];
+            const currentIndex = themes.indexOf(currentTheme);
+            currentTheme = themes[(currentIndex + 1) % themes.length];
+            
+            html.setAttribute('data-theme', currentTheme);
+            localStorage.setItem('theme', currentTheme);
+            updateThemeIcon();
+        });
+
+        function updateThemeIcon() {
+            if (currentTheme === 'dark') {
+                themeIcon.textContent = '☀️';
+            } else if (currentTheme === 'light') {
+                themeIcon.textContent = '🌙';
+            } else {
+                // Auto mode
+                themeIcon.textContent = '🔄';
+            }
+        }
+
+        // Detect system theme changes when in auto mode
+        if (window.matchMedia) {
+            window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+                if (currentTheme === 'auto') {
+                    // Force repaint for auto mode
+                    html.setAttribute('data-theme', 'auto');
+                }
+            });
+        }
+    </script>
 </body>
 </html>

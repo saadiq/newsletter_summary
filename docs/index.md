@@ -72,9 +72,9 @@ function filterPosts(label) {
     
     // Update active button
     document.querySelectorAll('.filter-btn').forEach(btn => {
-        btn.style.fontWeight = 'normal';
+        btn.classList.remove('active');
     });
-    event.target.style.fontWeight = 'bold';
+    event.target.classList.add('active');
 }
 </script>
 
@@ -82,15 +82,26 @@ function filterPosts(label) {
 .filter-btn {
     margin-right: 0.5rem;
     margin-bottom: 0.5rem;
-    padding: 0.3rem 0.8rem;
-    border: 1px solid #007bff;
-    background: white;
-    color: #007bff;
-    border-radius: 4px;
+    padding: 0.4rem 1rem;
+    border: 1px solid var(--border-color);
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+    border-radius: 6px;
     cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 0.9rem;
 }
+
 .filter-btn:hover {
-    background: #007bff;
-    color: white;
+    background: var(--accent-color);
+    color: var(--bg-primary);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px var(--shadow);
+}
+
+.filter-btn.active {
+    background: var(--accent-color);
+    color: var(--bg-primary);
+    font-weight: 600;
 }
 </style>
