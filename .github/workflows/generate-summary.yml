@@ -90,7 +90,13 @@ jobs:
     - name: Generate newsletter summary
       env:
         OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+        # Limit parallel workers to avoid segfault in GitHub Actions
+        NEWSLETTER_PARALLEL_WORKERS: "2"
       run: |
+        # Configure git identity before running (in case commit happens)
+        git config --global user.name 'github-actions[bot]'
+        git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+        
         # Debug: Test Gmail authentication
         python -c "from auth import authenticate_gmail; service = authenticate_gmail(); print('Gmail auth successful')" || echo "Gmail auth failed"
         
@@ -106,10 +112,13 @@ jobs:
             python main.py --days 1 --output docs/_posts --commit
         }
     
-    - name: Push changes
+    - name: Configure Git
       run: |
         git config --global user.name 'github-actions[bot]'
         git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+    
+    - name: Push changes
+      run: |
         git push origin main
     
     - name: Deploy to GitHub Pages

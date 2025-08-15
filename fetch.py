@@ -130,8 +130,12 @@ def get_ai_newsletters(
     # Thread-safe progress bar
     pbar_lock = threading.Lock()
     
+    # Allow environment variable to control parallel workers (for GitHub Actions)
+    import os
+    max_workers = int(os.environ.get('NEWSLETTER_PARALLEL_WORKERS', '5'))
+    
     with tqdm(total=len(messages), desc="Fetching newsletters", unit="email") as pbar:
-        with ThreadPoolExecutor(max_workers=5) as executor:
+        with ThreadPoolExecutor(max_workers=max_workers) as executor:
             # Submit all fetch tasks
             future_to_message = {
                 executor.submit(fetch_single_newsletter, service, msg['id'], pbar_lock, pbar): msg['id'] 
@@ -142,7 +146,9 @@ def get_ai_newsletters(
             for future in as_completed(future_to_message):
                 message_id = future_to_message[future]
                 try:
-                    newsletter = future.result(timeout=30)  # 30 second timeout per newsletter
+                    # Shorter timeout in GitHub Actions to prevent hanging
+                    timeout = 10 if os.environ.get('GITHUB_ACTIONS') else 30
+                    newsletter = future.result(timeout=timeout)
                     if newsletter:
                         if newsletter['status'] == 'success':
                             # Remove status and error fields for successful fetches
