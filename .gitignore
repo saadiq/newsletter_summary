@@ -10,6 +10,8 @@ credentials.json
 token.json
 *.credentials
 *.token
+github_secrets.txt
+test_secrets.sh
 
 # Generated output files (allow docs/_posts for Jekyll)
 ai_newsletter_summary_*.md
