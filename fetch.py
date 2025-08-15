@@ -134,6 +134,10 @@ def get_ai_newsletters(
     import os
     max_workers = int(os.environ.get('NEWSLETTER_PARALLEL_WORKERS', '5'))
     
+    # In GitHub Actions, use sequential processing for large batches to avoid memory issues
+    if os.environ.get('GITHUB_ACTIONS') and len(messages) > 20:
+        max_workers = 1  # Sequential processing for large batches in CI
+    
     with tqdm(total=len(messages), desc="Fetching newsletters", unit="email") as pbar:
         with ThreadPoolExecutor(max_workers=max_workers) as executor:
             # Submit all fetch tasks

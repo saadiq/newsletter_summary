@@ -91,7 +91,7 @@ jobs:
       env:
         OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
         # Limit parallel workers to avoid segfault in GitHub Actions
-        NEWSLETTER_PARALLEL_WORKERS: "2"
+        NEWSLETTER_PARALLEL_WORKERS: "1"  # Sequential processing to avoid memory issues
       run: |
         # Configure git identity before running (in case commit happens)
         git config --global user.name 'github-actions[bot]'
@@ -100,7 +100,9 @@ jobs:
         # Debug: Test Gmail authentication
         python -c "from auth import authenticate_gmail; service = authenticate_gmail(); print('Gmail auth successful')" || echo "Gmail auth failed"
         
-        # Run the summarizer with verbose output
+        # Run the summarizer with verbose output and memory limits
+        # Use sequential processing for large newsletter batches
+        ulimit -v 2097152  # Limit virtual memory to 2GB
         python main.py \
           --days ${{ github.event.inputs.days || '7' }} \
           --label "${{ github.event.inputs.label || 'ai-newsletter' }}" \
