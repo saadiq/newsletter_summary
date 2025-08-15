@@ -126,9 +126,7 @@ jobs:
           
           # Create commit with date
           COMMIT_DATE=$(date +"%Y-%m-%d")
-          git commit -m "Add AI newsletter summary for $COMMIT_DATE
-
-Generated automatically by GitHub Actions"
+          git commit -m "Add AI newsletter summary for $COMMIT_DATE - Generated automatically by GitHub Actions"
           
           # Push changes
           git push origin main
