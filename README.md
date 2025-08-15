@@ -207,19 +207,23 @@ python main.py --days 14
 
 5.  **View the Results**
 
-    The tool will output progress messages to the console. Once finished, it will generate a markdown file named `ai_newsletter_summary_YYYYMMDD_to_YYYYMMDD_HHMM.md` in the project directory. The filename reflects the actual date range of the newsletters analyzed **and the time of the summary run**, so multiple runs in a day will not overwrite each other. Open this file to view your summarized report.
+    The tool will output progress messages to the console. Once finished, it will generate a markdown file in the `docs/_posts/` directory with Jekyll-compatible naming: `YYYY-MM-DD-label-summary.md`. The file includes Jekyll frontmatter for GitHub Pages integration. Open this file to view your summarized report, or visit your GitHub Pages site after pushing the changes.
 
-### Custom Output Directory
+### Output Directory
 
-You can specify a custom output directory either via CLI or environment variable:
+By default, reports are saved to `docs/_posts/` for GitHub Pages integration. You can customize this:
 
-- CLI flag:
+- CLI flag (overrides default):
   ```bash
-  python main.py --output /path/to/output
+  python main.py --output /custom/path
   ```
-- Environment variable:
+- Environment variable (overrides default if no CLI flag specified):
   ```bash
-  export NEWSLETTER_SUMMARY_OUTPUT_DIR=/path/to/output
+  export NEWSLETTER_SUMMARY_OUTPUT_DIR=/custom/path
+  ```
+- To use current directory (old behavior):
+  ```bash
+  python main.py --output .
   ```
 
 ### Mock Data for Testing

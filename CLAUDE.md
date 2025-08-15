@@ -23,8 +23,11 @@ source venv/bin/activate
 pip install -r requirements.txt
 pip install -r requirements-dev.txt  # For testing
 
-# Run the application
+# Run the application (saves to docs/_posts by default)
 python main.py [options]
+
+# Save to current directory instead
+python main.py --output .
 
 # Run all tests
 pytest

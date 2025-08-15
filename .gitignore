@@ -11,10 +11,12 @@ token.json
 *.credentials
 *.token
 
-# Generated output files
+# Generated output files (allow docs/_posts for Jekyll)
 ai_newsletter_summary_*.md
 ai_newsletter_summary_*.pdf
 ai_newsletter_summary_*.html
+!docs/
+!docs/_posts/*.md
 
 # Implementation plans
 plan_*.md

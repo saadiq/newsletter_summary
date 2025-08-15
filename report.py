@@ -14,9 +14,14 @@ def generate_report(
     topics: List[str],
     llm_analysis: str,
     days: int,
-    model_info: Dict[str, Any] | None = None
-) -> Tuple[str, str]:
-    """Generate a final report with key insights."""
+    model_info: Dict[str, Any] | None = None,
+    label: str = "ai-newsletter"
+) -> Tuple[str, str, str]:
+    """Generate a final report with key insights.
+    
+    Returns:
+        Tuple of (report_content, filename_date_range, label)
+    """
     newsletter_sources = Counter([nl['sender'] for nl in newsletters])
     newsletter_dates = []
     newsletter_with_dates = []
@@ -70,6 +75,19 @@ def generate_report(
         date_range = f"## Week of {earliest_date.strftime('%B %d')} to {run_time.strftime('%B %d, %Y, %H:%M')} (summary run at {run_time_str})"
         filename_date_range = f"{run_time_file_str}_from_{earliest_date.strftime('%Y%m%d')}"
     
+    # Create Jekyll frontmatter
+    frontmatter = f"""---
+layout: post
+title: "{label.replace('-', ' ').title()} Summary - {latest_date.strftime('%B %d, %Y')}"
+date: {run_time.strftime('%Y-%m-%d %H:%M:%S')} +0000
+label: {label}
+model: {model_info.get('model', 'unknown') if model_info else 'unknown'}
+newsletter_count: {len(newsletters)}
+excerpt: "AI newsletter summary covering {len(topics)} key topics from {len(newsletters)} newsletters analyzed on {run_time.strftime('%B %d, %Y')}."
+---
+
+"""
+    
     very_recent_newsletters = []
     cutoff_date = latest_date - _RealTimedelta(days=1)
     for i, nl, date_obj in newsletter_with_dates:
@@ -101,14 +119,16 @@ def generate_report(
         # Add model section to the report
         model_section = f"## Generated with {model_name}\n\n"
     
-    report = f"""\
-# AI NEWSLETTER SUMMARY
+    # Build report content
+    report_body = f"""\
+# {label.replace('-', ' ').title().replace('Ai ', 'AI ')} SUMMARY
 {model_section}{date_range}
 
 ## TOP AI DEVELOPMENTS THIS WEEK
 
 {llm_analysis}
 """
+    report = report_body  # Keep for backward compatibility within function
     if breaking_news_section:
         report += breaking_news_section
     # Load or initialize website cache
@@ -233,4 +253,7 @@ This week's insights were gathered from {len(newsletters)} newsletters across {l
         timestamp = timestamp_dt.strftime("%Y-%m-%d %H:%M:%S")
         report += f" Analysis performed using {model_name} on {timestamp}."
     
-    return report, filename_date_range
+    # Combine frontmatter and body for Jekyll
+    report_with_frontmatter = frontmatter + report
+    
+    return report_with_frontmatter, filename_date_range, label

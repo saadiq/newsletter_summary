@@ -48,8 +48,12 @@ def main():
                         help='Only include emails sent to this recipient email address (optional)')
     parser.add_argument('--num-topics', type=int, default=10,
                         help='Number of topics to extract and summarize (default: 10)')
-    parser.add_argument('--output', type=str, default=None,
-                        help='Output directory for the report (overrides NEWSLETTER_SUMMARY_OUTPUT_DIR)')
+    parser.add_argument('--output', type=str, default='docs/_posts',
+                        help='Output directory for the report (default: docs/_posts for GitHub Pages)')
+    parser.add_argument('--commit', action='store_true',
+                        help='Automatically commit the generated report to git')
+    parser.add_argument('--push', action='store_true',
+                        help='Push the commit to remote repository (implies --commit)')
     parser.set_defaults(prioritize_recent=True, breaking_news_section=True)
     args = parser.parse_args()
     try:
@@ -117,24 +121,59 @@ def main():
         
         print("Generating report...")
         if not args.breaking_news_section:
-            def generate_report_without_breaking(newsletters, topics, llm_analysis, days, model_info):
-                report, filename = generate_report(newsletters, topics, llm_analysis, days, model_info)
+            def generate_report_without_breaking(newsletters, topics, llm_analysis, days, model_info, label):
+                report, filename, label_out = generate_report(newsletters, topics, llm_analysis, days, model_info, label)
                 import re
                 report = re.sub(r'\n## JUST IN: LATEST DEVELOPMENTS\n\n.*?\n\n## ', '\n\n## ', report, flags=re.DOTALL)
-                return report, filename
+                return report, filename, label_out
             
-            report, filename_date_range = generate_report_without_breaking(newsletters, topics, llm_analysis, args.days, model_info)
+            report, filename_date_range, used_label = generate_report_without_breaking(newsletters, topics, llm_analysis, args.days, model_info, label_arg or 'general')
         else:
-            report, filename_date_range = generate_report(newsletters, topics, llm_analysis, args.days, model_info)
+            report, filename_date_range, used_label = generate_report(newsletters, topics, llm_analysis, args.days, model_info, label_arg or 'general')
         
-        report_filename = f"ai_newsletter_summary_{filename_date_range}.md"
-        output_dir = args.output or os.environ.get("NEWSLETTER_SUMMARY_OUTPUT_DIR", "")
-        if output_dir:
-            os.makedirs(output_dir, exist_ok=True)
-            report_filename = os.path.join(output_dir, report_filename)
+        # Generate filename based on label and date for Jekyll
+        # Jekyll requires format: YYYY-MM-DD-title.md in _posts directory
+        from datetime import datetime as dt
+        post_date = dt.now().strftime('%Y-%m-%d')
+        safe_label = used_label.replace(' ', '-').lower()
+        jekyll_filename = f"{post_date}-{safe_label}-summary.md"
+        
+        # Determine output directory (args.output defaults to 'docs/_posts' now)
+        output_dir = args.output
+        
+        # Allow environment variable to override if args.output is still the default
+        if args.output == 'docs/_posts' and os.environ.get("NEWSLETTER_SUMMARY_OUTPUT_DIR"):
+            output_dir = os.environ.get("NEWSLETTER_SUMMARY_OUTPUT_DIR")
+        
+        # Create directory and save report
+        os.makedirs(output_dir, exist_ok=True)
+        report_filename = os.path.join(output_dir, jekyll_filename)
+        
         with open(report_filename, 'w') as f:
             f.write(report)
         print(f"Report saved to {report_filename}")
+        
+        # Auto-commit and push if requested
+        if args.push:
+            args.commit = True  # Push implies commit
+        
+        if args.commit:
+            import subprocess
+            try:
+                # Add the report file
+                subprocess.run(['git', 'add', report_filename], check=True)
+                
+                # Create commit message
+                commit_msg = f"Add {used_label} newsletter summary for {post_date}"
+                subprocess.run(['git', 'commit', '-m', commit_msg], check=True)
+                print(f"Committed report: {commit_msg}")
+                
+                if args.push:
+                    subprocess.run(['git', 'push'], check=True)
+                    print("Pushed to remote repository")
+            except subprocess.CalledProcessError as e:
+                print(f"Git operation failed: {e}")
+                print("Report was saved but not committed/pushed")
     except ImportError as e:
         print(f"\nMissing dependency: {str(e)}")
         print("Please install required packages: pip install -r requirements.txt")

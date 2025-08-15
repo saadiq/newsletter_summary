@@ -1,0 +1,66 @@
+name: Generate Newsletter Summary
+
+on:
+  schedule:
+    # Run every Sunday at 10 AM UTC
+    - cron: '0 10 * * 0'
+  workflow_dispatch:
+    inputs:
+      days:
+        description: 'Number of days to look back'
+        required: false
+        default: '7'
+      label:
+        description: 'Gmail label to filter'
+        required: false
+        default: 'ai-newsletter'
+
+jobs:
+  generate-summary:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+    
+    - name: Install dependencies
+      run: |
+        pip install --upgrade pip
+        pip install -r requirements.txt
+    
+    - name: Generate newsletter summary
+      env:
+        OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+        GMAIL_CREDENTIALS: ${{ secrets.GMAIL_CREDENTIALS }}
+        GMAIL_TOKEN: ${{ secrets.GMAIL_TOKEN }}
+      run: |
+        # Write credentials from secrets
+        echo "$GMAIL_CREDENTIALS" > credentials.json
+        echo "$GMAIL_TOKEN" > token.json
+        
+        # Run the summarizer
+        python main.py \
+          --days ${{ github.event.inputs.days || '7' }} \
+          --label "${{ github.event.inputs.label || 'ai-newsletter' }}" \
+          --output docs/_posts \
+          --commit
+    
+    - name: Push changes
+      run: |
+        git config --global user.name 'GitHub Actions'
+        git config --global user.email 'actions@github.com'
+        git push origin main
+    
+    - name: Deploy to GitHub Pages
+      if: success()
+      uses: peaceiris/actions-gh-pages@v3
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        publish_dir: ./docs
+        publish_branch: gh-pages
