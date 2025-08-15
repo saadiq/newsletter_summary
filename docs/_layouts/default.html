@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% if page.title %}{{ page.title }} - {% endif %}{{ site.title }}</title>
     <meta name="description" content="{{ page.excerpt | default: site.description | strip_html | normalize_whitespace | truncate: 160 | escape }}">
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
     <style>
         :root {
             /* Light mode colors */
@@ -125,16 +127,29 @@
         .theme-toggle {
             background: var(--bg-secondary);
             border: 1px solid var(--border-color);
-            border-radius: 20px;
-            padding: 0.4rem 0.8rem;
+            border-radius: 8px;
+            padding: 0.5rem;
             cursor: pointer;
-            font-size: 1.2rem;
-            transition: transform 0.2s;
+            transition: all 0.2s;
             margin-left: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 40px;
+            height: 40px;
         }
 
         .theme-toggle:hover {
-            transform: scale(1.1);
+            background: var(--bg-tertiary);
+            transform: translateY(-2px);
+            box-shadow: 0 2px 8px var(--shadow);
+        }
+
+        .theme-toggle svg {
+            width: 20px;
+            height: 20px;
+            stroke: var(--text-primary);
+            transition: stroke 0.2s;
         }
 
         /* Main content */
@@ -312,7 +327,7 @@
                 </nav>
             </div>
             <button class="theme-toggle" id="theme-toggle" title="Toggle theme">
-                <span class="theme-icon">🌙</span>
+                <i data-lucide="moon" class="theme-icon"></i>
             </button>
         </header>
 
@@ -327,10 +342,12 @@
     </div>
 
     <script>
+        // Initialize Lucide icons
+        lucide.createIcons();
+
         // Theme management
         const html = document.documentElement;
         const themeToggle = document.getElementById('theme-toggle');
-        const themeIcon = themeToggle.querySelector('.theme-icon');
 
         // Get saved theme or default to 'auto'
         let currentTheme = localStorage.getItem('theme') || 'auto';
@@ -351,14 +368,24 @@
         });
 
         function updateThemeIcon() {
+            const iconContainer = themeToggle.querySelector('.theme-icon');
+            let iconName;
+            
             if (currentTheme === 'dark') {
-                themeIcon.textContent = '☀️';
+                iconName = 'sun';
+                themeToggle.title = 'Switch to auto mode';
             } else if (currentTheme === 'light') {
-                themeIcon.textContent = '🌙';
+                iconName = 'moon';
+                themeToggle.title = 'Switch to dark mode';
             } else {
                 // Auto mode
-                themeIcon.textContent = '🔄';
+                iconName = 'monitor';
+                themeToggle.title = 'Switch to light mode';
             }
+            
+            // Replace the icon
+            iconContainer.setAttribute('data-lucide', iconName);
+            lucide.createIcons();
         }
 
         // Detect system theme changes when in auto mode
