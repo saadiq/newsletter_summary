@@ -54,7 +54,15 @@ def main():
     args = parser.parse_args()
     try:
         print("Authenticating with Gmail...")
-        service = authenticate_gmail()
+        try:
+            service = authenticate_gmail()
+        except Exception as auth_error:
+            print(f"\nAuthentication failed: {str(auth_error)}")
+            print("\nTroubleshooting tips:")
+            print("1. Check that credentials.json exists in the project directory")
+            print("2. Delete token.json and re-authenticate if needed")
+            print("3. Ensure Gmail API is enabled in Google Cloud Console")
+            return
         label_arg = None if args.no_label else args.label
         print(f"Retrieving AI newsletters from the past {args.days} days... (label: {label_arg if label_arg else 'none'})")
         mock_data_env = os.environ.get("NEWSLETTER_SUMMARY_MOCK_DATA")
@@ -68,9 +76,21 @@ def main():
                 from_email=args.from_email,
                 to_email=args.to_email
             )
-        print(f"Found {len(newsletters)} newsletters.")
+        successful_count = len([n for n in newsletters if 'error' not in n])
+        print(f"Found {len(newsletters)} newsletters (successfully fetched: {successful_count}).")
+        
         if not newsletters:
-            print("No newsletters found. Check your Gmail labels or date range.")
+            print("\nNo newsletters found. Possible reasons:")
+            print(f"1. No emails with label '{label_arg}' in the last {args.days} days")
+            print("2. Gmail API rate limit reached (try again later)")
+            print("3. Network connectivity issues")
+            return
+        
+        if successful_count == 0:
+            print("\nAll newsletter fetches failed. Please check:")
+            print("1. Your internet connection")
+            print("2. Gmail API permissions")
+            print("3. Try running again (temporary API issues)")
             return
         
         # Direct LLM approach - combined topic extraction and summarization
@@ -115,8 +135,21 @@ def main():
         with open(report_filename, 'w') as f:
             f.write(report)
         print(f"Report saved to {report_filename}")
+    except ImportError as e:
+        print(f"\nMissing dependency: {str(e)}")
+        print("Please install required packages: pip install -r requirements.txt")
+    except FileNotFoundError as e:
+        print(f"\nFile not found: {str(e)}")
+        print("Ensure credentials.json exists in the project directory")
     except Exception as e:
-        print(f"Error: {str(e)}")
+        print(f"\nUnexpected error: {str(e)}")
+        print("\nFor debugging, you can:")
+        print("1. Check the .env.local file for correct API keys")
+        print("2. Run 'python config_validator.py' to validate configuration")
+        print("3. Try with fewer days using --days flag")
+        import traceback
+        if os.environ.get('DEBUG'):
+            traceback.print_exc()
 
 if __name__ == "__main__":
     main()

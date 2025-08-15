@@ -100,3 +100,4 @@ The project includes comprehensive configuration validation via `config_validato
 - **JSON Files**: Validates `newsletter_websites.json` structure, URLs, and detects duplicates/tracking URLs
 - **Credentials**: Validates Gmail OAuth configuration files
 - Run `python config_validator.py` to check all configuration before running the main application
+- use code-committer agent for github commits and pushes
