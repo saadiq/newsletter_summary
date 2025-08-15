@@ -108,10 +108,13 @@ jobs:
           --label "${{ github.event.inputs.label || 'ai-newsletter' }}" \
           --output docs/_posts \
           --commit || {
-            echo "Summary generation failed. Checking for mock data..."
-            # If real fetch fails, try with mock data for testing
-            export NEWSLETTER_SUMMARY_MOCK_DATA='[{"subject": "Debug Test", "date": "Thu, 15 Aug 2025 10:00:00 +0000", "sender": "debug@test.com", "body": "This is a debug test because Gmail fetch failed."}]'
-            python main.py --days 1 --output docs/_posts --commit
+            echo "ERROR: Newsletter summary generation failed!"
+            echo "Check the logs above for details."
+            echo "Common issues:"
+            echo "  - Gmail authentication failed (check GMAIL_TOKEN secret)"
+            echo "  - No newsletters found with the specified label"
+            echo "  - API rate limiting or network issues"
+            exit 1
         }
     
     - name: Configure Git
