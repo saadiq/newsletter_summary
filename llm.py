@@ -147,9 +147,9 @@ def analyze_with_openrouter(prompt, model_provider, custom_model=None):
     
     # Map provider to actual OpenRouter model ID
     model_map = {
-        'claude': "anthropic/claude-sonnet-4",
-        'openai': "openai/gpt-4.1-mini",
-        'google': "google/gemini-2.5-flash"
+        'claude': "anthropic/claude-3-haiku",
+        'openai': "openai/gpt-4o-mini",
+        'google': "google/gemini-2.0-flash-001"
     }
     
     # Choose between custom model or mapped provider

@@ -16,9 +16,9 @@ import json
 def get_default_model_name(provider):
     """Return the actual model name based on the provider."""
     model_map = {
-        'claude': "claude-3-7-sonnet-20250219",
-        'openai': "gpt-4.1-2025-04-14",
-        'google': "gemini-2.5-flash-preview"
+        'claude': "claude-3-haiku",
+        'openai': "gpt-4o-mini",
+        'google': "gemini-2.0-flash-001"
     }
     return model_map.get(provider, "unknown model")
 
@@ -34,10 +34,10 @@ def main():
                         help='Add a separate "Just In" section for latest newsletters (default: enabled)')
     parser.add_argument('--no-breaking-news-section', dest='breaking_news_section', action='store_false',
                         help='Do not add a separate "Just In" section')
-    parser.add_argument('--llm-provider', choices=['claude', 'openai', 'google'], default='google',
-                        help='LLM provider for summarization: claude (Claude 3.7 Sonnet), openai (GPT-4.1), or google (Gemini 2.5 Flash - default)')
+    parser.add_argument('--llm-provider', choices=['claude', 'openai', 'google'], default='openai',
+                        help='LLM provider for summarization: claude (Claude 3 Haiku), openai (GPT-4o-mini - default), or google (Gemini 2.0 Flash)')
     parser.add_argument('--model', type=str, default=None,
-                        help='Specify a custom OpenRouter model (e.g., "google/gemini-2.5-flash-preview:thinking") overriding the provider selection')
+                        help='Specify a custom OpenRouter model (e.g., "google/gemini-2.0-flash-exp") overriding the provider selection')
     parser.add_argument('--label', type=str, default='ai-newsletter',
                         help='Gmail label to filter newsletters (default: ai-newsletter)')
     parser.add_argument('--no-label', action='store_true',
