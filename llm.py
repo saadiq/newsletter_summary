@@ -53,7 +53,7 @@ def analyze_newsletters_unified(
     
     newsletter_content = "\n".join(content_parts)
     
-    # Build comprehensive prompt with source and link requirements
+    # Build comprehensive prompt
     prompt = f"""
 Analyze these AI newsletters and identify the {num_topics} most significant and distinct topics.
 
@@ -62,8 +62,6 @@ For each topic:
 2. Provide "What's New" - a brief description of the development
 3. Explain "Why It Matters" for regular people in their daily lives
 4. Suggest "Practical Impact" with 2-3 specific actions people can take
-5. At the end of each topic, add:
-   - A line starting with "**Source:**" that lists the newsletter(s) where this information came from (e.g., "**Source:** The Neuron, TLDR AI...")
 
 Format your response with markdown:
 
@@ -73,8 +71,6 @@ Format your response with markdown:
 - **Why It Matters:** [Explanation for regular users]
 
 - **Practical Impact:** [2-3 specific actions or opportunities]
-
-- **Source:** [Newsletter names that covered this topic]
 
 ### 2. [Next Topic]
 ...and so on
@@ -88,7 +84,6 @@ GUIDELINES:
 - Focus on topics relevant to regular people, not just AI researchers or specialists
 - "Why It Matters" should explain real-world implications, not just industry impact
 - "Practical Impact" must be truly actionable - what can regular people DO with this information?
-- For "Source" information, list the actual newsletter names (e.g., "The Neuron", "TLDR AI", "AI Breakfast")
 
 NEWSLETTER CONTENT:
 {newsletter_content}
