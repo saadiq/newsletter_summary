@@ -128,12 +128,12 @@ def main():
         else:
             report, filename_date_range, used_label = generate_report(newsletters, topics, llm_analysis, args.days, model_info, label_arg or 'general')
         
-        # Generate filename based on label and date for Jekyll
+        # Generate filename based on label, date, and days range for Jekyll
         # Jekyll requires format: YYYY-MM-DD-title.md in _posts directory
         from datetime import datetime as dt
         post_date = dt.now().strftime('%Y-%m-%d')
         safe_label = used_label.replace(' ', '-').lower()
-        jekyll_filename = f"{post_date}-{safe_label}-summary.md"
+        jekyll_filename = f"{post_date}-{safe_label}-summary-{args.days}d.md"
         
         # Determine output directory (args.output defaults to 'docs/_posts' now)
         output_dir = args.output
