@@ -4,7 +4,7 @@ The AI Newsletter Summarizer is a Python tool designed to automatically retrieve
 
 ## Features
 
-- **Parallel newsletter fetching** - Retrieves multiple newsletters concurrently (3-5x faster for 10+ newsletters)
+- **Reliable newsletter fetching** - Sequential processing with robust retry logic and error handling
 - **Resilient error handling** - Continues processing even if individual newsletters fail to fetch or parse
 - **Robust HTML parsing** - Multiple fallback strategies ensure content extraction even from malformed emails
 - Automatically fetches emails tagged with "ai-newsletter" from your Gmail account
@@ -207,7 +207,7 @@ python main.py --days 14
 
 5.  **View the Results**
 
-    The tool will output progress messages to the console. Once finished, it will generate a markdown file in the `docs/_posts/` directory with Jekyll-compatible naming: `YYYY-MM-DD-label-summary.md`. The file includes Jekyll frontmatter for GitHub Pages integration. Open this file to view your summarized report, or visit your GitHub Pages site after pushing the changes.
+    The tool will output progress messages to the console. Once finished, it will generate a markdown file in the `docs/_posts/` directory with Jekyll-compatible naming: `YYYY-MM-DD-label-summary-Xd.md` (where X is the number of days covered by the report). The file includes Jekyll frontmatter for GitHub Pages integration. Open this file to view your summarized report, or visit your GitHub Pages site after pushing the changes.
 
 ### Output Directory
 
@@ -391,17 +391,17 @@ The tool caches detected newsletter websites for each source and marks them as *
 
 ### Recent Improvements (August 2025)
 
-- **3-5x faster newsletter fetching** using parallel processing (ThreadPoolExecutor with 5 workers)
-- **Automatic retry logic** with exponential backoff for Gmail API calls
+- **Reliable newsletter fetching** with automatic retry logic and exponential backoff
 - **Graceful error handling** - individual newsletter failures don't crash the entire process
 - **Enhanced HTML parsing** with multiple fallback strategies for malformed content
 - **Detailed error reporting** with troubleshooting tips for common issues
 
-### Performance Tips
+### Reliability Features
 
-- The tool fetches up to 5 newsletters concurrently by default
-- For very large volumes (50+ newsletters), consider using `--days` to limit the date range
+- The tool fetches newsletters sequentially with automatic retry on failures
+- Built-in exponential backoff prevents rate limiting issues
 - Failed fetches are reported but don't stop processing of successful ones
+- For very large volumes (50+ newsletters), consider using `--days` to limit the date range
 
 ## Troubleshooting
 
@@ -446,7 +446,7 @@ python main.py
 
 The project includes comprehensive test coverage:
 
-- `test_fetch_api.py`: Unit tests for email fetching, parallel processing, and error handling
+- `test_fetch_api.py`: Unit tests for email fetching, retry logic, and error handling
 - `test_e2e_cli.py`: End-to-end tests for the CLI workflow and report generation
 - `test_llm.py`: Tests for LLM integration and OpenRouter functionality
 - `test_report.py`: Tests for report generation and formatting
@@ -463,7 +463,7 @@ pytest
 To run specific test files:
 
 ```bash
-pytest test_fetch_api.py  # Test parallel fetching
+pytest test_fetch_api.py  # Test fetching with retry logic
 pytest test_e2e_cli.py    # Test full workflow
 ```
 
@@ -566,9 +566,9 @@ After the workflow runs successfully:
 
 4. **Memory/Segmentation faults**
    - The workflow is optimized for GitHub Actions with:
-     - Sequential processing for large batches
+     - Sequential processing to ensure reliability
      - Memory limits to prevent crashes
-     - Automatic retry logic
+     - Automatic retry logic with exponential backoff
 
 ### Customizing the Workflow
 
