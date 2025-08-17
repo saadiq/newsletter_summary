@@ -9,7 +9,7 @@ try:
 except ImportError:
     openai = None
 from yaspin import yaspin
-from utils import clean_body
+from utils import clean_body, smart_extract_content
 # Add requests for OpenRouter API
 import requests
 import json
@@ -42,13 +42,16 @@ def analyze_newsletters_unified(
     for i, nl in enumerate(newsletters, 1):
         clean_content = clean_body(nl['body'], nl.get('body_format'))
         
+        # Apply smart extraction to remove noise before truncation
+        extracted_content = smart_extract_content(clean_content)
+        
         # Add structured newsletter entry with metadata
         content_parts.append(
             f"NEWSLETTER #{i}\n"
             f"SUBJECT: {nl['subject']}\n"
             f"SENDER: {nl['sender']}\n"
             f"DATE: {nl['date']}\n"
-            f"CONTENT:\n{clean_content[:3000]}...\n\n"  # Truncate to manage token usage
+            f"CONTENT:\n{extracted_content[:13000]}...\n\n"  # Increased to 13k for better coverage
         )
     
     newsletter_content = "\n".join(content_parts)
