@@ -114,13 +114,13 @@ jobs:
         git config --global user.name 'github-actions[bot]'
         git config --global user.email 'github-actions[bot]@users.noreply.github.com'
         
-        # Check if there are changes to commit
-        if git diff --quiet && git diff --staged --quiet; then
+        # Add all changes in docs/_posts (including untracked files)
+        git add docs/_posts/
+        
+        # Check if there are changes to commit (after staging)
+        if git diff --staged --quiet; then
           echo "No changes to commit"
         else
-          # Add all changes in docs/_posts
-          git add docs/_posts/
-          
           # Create commit with date
           COMMIT_DATE=$(date +"%Y-%m-%d")
           git commit -m "Add AI newsletter summary for $COMMIT_DATE - Generated automatically by GitHub Actions"
