@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-AI Newsletter Summarizer - A Python CLI tool that fetches AI-focused newsletters from Gmail, analyzes them with LLMs (via OpenRouter by default), and generates concise summary reports for regular users.
+Newsletter Summarizer - A Python CLI tool that fetches newsletters from Gmail for any topic domain (defaults to AI for backward compatibility), analyzes them with LLMs (via OpenRouter by default), and generates concise summary reports for regular users. Can be customized for Finance, Sports, Technology, Politics, or any other topic through the `--topic` parameter and custom analysis guidance.
 
 **Recent Improvements (Aug 2025):**
 - Robust error handling with retry logic and graceful degradation
@@ -28,6 +28,10 @@ python main.py [options]
 # Save to current directory instead
 python main.py --output .
 
+# Run for different topics
+python main.py --topic Finance --label finance-newsletter
+python main.py --topic Sports --guidance-file sports_guide.txt
+
 # Run all tests
 pytest
 
@@ -37,6 +41,9 @@ pytest test_e2e_cli.py
 
 # Run specific test
 pytest test_fetch_api.py::test_get_ai_newsletters_success
+
+# Test with custom topic
+python main.py --topic Finance --label finance-news --days 1
 
 # Verify OpenRouter setup
 python verify_openrouter.py
@@ -63,6 +70,8 @@ The codebase follows a modular architecture with clear separation of concerns:
 
 ### Key Architectural Decisions
 
+- **Topic Flexibility**: Supports any topic domain through `--topic` parameter (defaults to AI)
+- **Custom Guidance**: Analysis can be customized via `--analysis-guidance` or `--guidance-file`
 - **OpenRouter as Default**: All LLM calls route through OpenRouter by default for cost efficiency and tracking
 - **Provider Abstraction**: Supports multiple LLM providers (OpenAI, Anthropic, Google) with consistent interface
 - **Newsletter Website Caching**: Maintains `newsletter_websites.json` to cache and verify newsletter sources
@@ -99,8 +108,15 @@ The `--llm-provider` flag maps to specific models (default is `google`):
 ### Key Files to Understand Cross-Module Behavior
 
 1. **main.py** orchestrates the entire flow with enhanced error handling and user feedback
+   - Accepts `--topic`, `--analysis-guidance`, and `--guidance-file` parameters
+   - Defaults to AI topic for backward compatibility
 2. **llm.py** contains the unified analysis prompt and model routing logic
+   - `analyze_newsletters_unified()` accepts topic and custom_guidance parameters
+   - Builds dynamic prompts based on topic
+   - Uses custom guidance when provided, otherwise uses topic-specific defaults
 3. **report.py** handles both report generation and newsletter website detection/caching
+   - `generate_report()` accepts topic parameter
+   - Generates dynamic headers like "TOP {TOPIC} DEVELOPMENTS"
 4. **fetch.py** implements sequential fetching with retry logic and failure tracking
 5. **utils.py** provides robust HTML parsing with multiple fallback strategies
 6. **config_validator.py** validates all configuration files and environment variables
@@ -118,7 +134,18 @@ The project includes comprehensive configuration validation via `config_validato
 - **User Feedback**: Provide clear error messages with troubleshooting steps
 - **Performance**: Implement retry logic for all external API calls
 - **Testing**: Update tests when changing function signatures or behavior
+  - Tests for topic customization in `test_llm.py` and `test_report.py`
+  - Backward compatibility tests ensure AI remains the default
 - **Commits**: Use the code-committer agent for well-crafted commit messages and pushes
+
+### Topic Customization
+
+The tool supports analyzing newsletters for any domain:
+
+- **Topic Parameter**: Controls analysis focus and report headers
+- **Custom Guidance**: Overrides default analysis behavior
+- **Default Behavior**: When no topic specified, defaults to "AI"
+- **Guidance Precedence**: Custom guidance > Topic-specific defaults > Generic defaults
 
 ### Common Debugging Tips
 

@@ -23,7 +23,7 @@ def get_default_model_name(provider):
     return model_map.get(provider, "unknown model")
 
 def main():
-    parser = argparse.ArgumentParser(description='Summarize AI newsletters from Gmail.')
+    parser = argparse.ArgumentParser(description='Summarize newsletters from Gmail.')
     parser.add_argument('--days', type=int, default=7, 
                         help='Number of days to look back for newsletters (default: 7)')
     parser.add_argument('--prioritize-recent', action='store_true',
@@ -50,6 +50,12 @@ def main():
                         help='Number of topics to extract and summarize (default: 10)')
     parser.add_argument('--output', type=str, default='docs/_posts',
                         help='Output directory for the report (default: docs/_posts for GitHub Pages)')
+    parser.add_argument('--topic', type=str, default='AI',
+                        help='Topic domain for the newsletters (default: AI)')
+    parser.add_argument('--analysis-guidance', type=str, default=None,
+                        help='Custom guidance for analyzing newsletters (overrides default guidance)')
+    parser.add_argument('--guidance-file', type=str, default=None,
+                        help='File containing custom analysis guidance (alternative to --analysis-guidance)')
     # Git operations removed - handled by GitHub Actions for reliability
     parser.set_defaults(prioritize_recent=True, breaking_news_section=True)
     args = parser.parse_args()
@@ -65,7 +71,7 @@ def main():
             print("3. Ensure Gmail API is enabled in Google Cloud Console")
             return
         label_arg = None if args.no_label else args.label
-        print(f"Retrieving AI newsletters from the past {args.days} days... (label: {label_arg if label_arg else 'none'})")
+        print(f"Retrieving {args.topic} newsletters from the past {args.days} days... (label: {label_arg if label_arg else 'none'})")
         mock_data_env = os.environ.get("NEWSLETTER_SUMMARY_MOCK_DATA")
         if mock_data_env:
             newsletters = json.loads(mock_data_env)
@@ -94,6 +100,18 @@ def main():
             print("3. Try running again (temporary API issues)")
             return
         
+        # Load custom guidance if provided
+        custom_guidance = None
+        if args.guidance_file:
+            try:
+                with open(args.guidance_file, 'r') as f:
+                    custom_guidance = f.read().strip()
+                print(f"Loaded custom guidance from {args.guidance_file}")
+            except Exception as e:
+                print(f"Warning: Could not load guidance file {args.guidance_file}: {e}")
+        elif args.analysis_guidance:
+            custom_guidance = args.analysis_guidance
+        
         # Direct LLM approach - combined topic extraction and summarization
         if args.model:
             print(f"Using custom OpenRouter model: {args.model}")
@@ -104,7 +122,9 @@ def main():
             newsletters, 
             num_topics=args.num_topics,
             provider=args.llm_provider,
-            model=args.model
+            model=args.model,
+            topic=args.topic,
+            custom_guidance=custom_guidance
         )
         
         print(f"Identified and analyzed {len(topics)} topics")
@@ -118,15 +138,15 @@ def main():
         
         print("Generating report...")
         if not args.breaking_news_section:
-            def generate_report_without_breaking(newsletters, topics, llm_analysis, days, model_info, label):
-                report, filename, label_out = generate_report(newsletters, topics, llm_analysis, days, model_info, label)
+            def generate_report_without_breaking(newsletters, topics, llm_analysis, days, model_info, label, topic='AI'):
+                report, filename, label_out = generate_report(newsletters, topics, llm_analysis, days, model_info, label, topic=topic)
                 import re
                 report = re.sub(r'\n## JUST IN: LATEST DEVELOPMENTS\n\n.*?\n\n## ', '\n\n## ', report, flags=re.DOTALL)
                 return report, filename, label_out
             
-            report, filename_date_range, used_label = generate_report_without_breaking(newsletters, topics, llm_analysis, args.days, model_info, label_arg or 'general')
+            report, filename_date_range, used_label = generate_report_without_breaking(newsletters, topics, llm_analysis, args.days, model_info, label_arg or 'general', topic=args.topic)
         else:
-            report, filename_date_range, used_label = generate_report(newsletters, topics, llm_analysis, args.days, model_info, label_arg or 'general')
+            report, filename_date_range, used_label = generate_report(newsletters, topics, llm_analysis, args.days, model_info, label_arg or 'general', topic=args.topic)
         
         # Generate filename based on label, date, and days range for Jekyll
         # Jekyll requires format: YYYY-MM-DD-title.md in _posts directory

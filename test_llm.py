@@ -168,6 +168,81 @@ class TestAnalyzeNewslettersUnified:
             
             assert result == "### 1. Test Topic"
             mock_client.messages.create.assert_called_once()
+    
+    def test_analyze_newsletters_unified_custom_topic_domain(self):
+        """Test with custom topic domain (e.g., Finance instead of AI)."""
+        newsletters = [
+            {
+                'subject': 'Finance Weekly',
+                'sender': 'finance@newsletter.com',
+                'date': '2024-01-01',
+                'body': 'Stock market updates and investment tips',
+                'body_format': 'plain'
+            }
+        ]
+        
+        with patch('llm.analyze_with_openrouter') as mock_openrouter:
+            mock_openrouter.return_value = "### 1. Market Update\n- **What's New:** Stocks rise"
+            
+            result, topics = analyze_newsletters_unified(
+                newsletters, 
+                topic='Finance'
+            )
+            
+            # Check that the prompt includes Finance instead of AI
+            call_args = mock_openrouter.call_args
+            prompt = call_args[0][0] if call_args else ''
+            assert 'Finance newsletters' in prompt
+            assert 'AI newsletters' not in prompt
+    
+    def test_analyze_newsletters_unified_custom_guidance(self):
+        """Test with custom analysis guidance."""
+        newsletters = [
+            {
+                'subject': 'Test Newsletter',
+                'sender': 'test@example.com',
+                'date': '2024-01-01',
+                'body': 'Content for testing',
+                'body_format': 'plain'
+            }
+        ]
+        
+        custom_guidance = "Focus on market movements and include ticker symbols."
+        
+        with patch('llm.analyze_with_openrouter') as mock_openrouter:
+            mock_openrouter.return_value = "### 1. Test Topic"
+            
+            result, topics = analyze_newsletters_unified(
+                newsletters,
+                custom_guidance=custom_guidance
+            )
+            
+            # Check that custom guidance is passed to analyze_with_openrouter
+            call_args = mock_openrouter.call_args
+            assert call_args[1].get('custom_guidance') == custom_guidance
+    
+    def test_analyze_newsletters_unified_backward_compatibility(self):
+        """Test that default behavior (AI topic) is maintained for backward compatibility."""
+        newsletters = [
+            {
+                'subject': 'AI Newsletter',
+                'sender': 'ai@example.com',
+                'date': '2024-01-01',
+                'body': 'AI content',
+                'body_format': 'plain'
+            }
+        ]
+        
+        with patch('llm.analyze_with_openrouter') as mock_openrouter:
+            mock_openrouter.return_value = "### 1. AI Topic"
+            
+            # Call without specifying topic (should default to AI)
+            result, topics = analyze_newsletters_unified(newsletters)
+            
+            # Check that the prompt includes AI newsletters
+            call_args = mock_openrouter.call_args
+            prompt = call_args[0][0] if call_args else ''
+            assert 'AI newsletters' in prompt
 
 
 class TestAnalyzeWithOpenrouter:

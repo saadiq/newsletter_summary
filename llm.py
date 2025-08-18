@@ -21,7 +21,9 @@ def analyze_newsletters_unified(
     newsletters: List[Dict[str, Any]],
     num_topics: int = 10,
     provider: str = 'openai',
-    model: Optional[str] = None
+    model: Optional[str] = None,
+    topic: str = 'AI',
+    custom_guidance: Optional[str] = None
 ) -> Tuple[str, List[str]]:
     """
     Process newsletters in a single step - identifying topics and generating summaries.
@@ -32,6 +34,8 @@ def analyze_newsletters_unified(
         num_topics: Number of topics to identify and summarize (default: 10)
         provider: 'openai', 'claude', or 'google'
         model: Optional custom OpenRouter model name, overrides provider if specified
+        topic: Topic domain for the newsletters (default: 'AI')
+        custom_guidance: Optional custom analysis guidance to override defaults
         
     Returns:
         Tuple of (analysis_text, extracted_topic_titles)
@@ -57,8 +61,32 @@ def analyze_newsletters_unified(
     newsletter_content = "\n".join(content_parts)
     
     # Build comprehensive prompt
+    # Determine guidelines based on topic and custom guidance
+    if custom_guidance:
+        guidelines = custom_guidance
+    elif topic.upper() == 'AI':
+        # Keep existing AI-specific guidance as default for backward compatibility
+        guidelines = f"""- Identify exactly {num_topics} topics unless there aren't enough distinct topics in the content
+- Sort topics by importance (most important first)
+- Focus on substantive developments, not newsletter metadata or advertisements
+- Ensure topics are distinct from each other (avoid multiple topics about the same subject)
+- Prioritize recent developments, major product launches, policy changes, or significant research
+- Focus on topics relevant to regular people, not just AI researchers or specialists
+- "Why It Matters" should explain real-world implications, not just industry impact
+- "Practical Impact" must be truly actionable - what can regular people DO with this information?"""
+    else:
+        # Generic guidance for other topics
+        guidelines = f"""- Identify exactly {num_topics} topics unless there aren't enough distinct topics in the content
+- Sort topics by importance (most important first)
+- Focus on substantive developments, not newsletter metadata or advertisements
+- Ensure topics are distinct from each other (avoid multiple topics about the same subject)
+- Prioritize recent developments and significant changes
+- Focus on topics relevant to regular people
+- "Why It Matters" should explain real-world implications
+- "Practical Impact" must be truly actionable - what can regular people DO with this information?"""
+    
     prompt = f"""
-Analyze these AI newsletters and identify the {num_topics} most significant and distinct topics.
+Analyze these {topic} newsletters and identify the {num_topics} most significant and distinct topics.
 
 For each topic:
 1. Create a clear, concise headline
@@ -79,14 +107,7 @@ Format your response with markdown:
 ...and so on
 
 GUIDELINES:
-- Identify exactly {num_topics} topics unless there aren't enough distinct topics in the content
-- Sort topics by importance (most important first)
-- Focus on substantive developments, not newsletter metadata or advertisements
-- Ensure topics are distinct from each other (avoid multiple topics about the same subject)
-- Prioritize recent developments, major product launches, policy changes, or significant research
-- Focus on topics relevant to regular people, not just AI researchers or specialists
-- "Why It Matters" should explain real-world implications, not just industry impact
-- "Practical Impact" must be truly actionable - what can regular people DO with this information?
+{guidelines}
 
 NEWSLETTER CONTENT:
 {newsletter_content}
@@ -95,18 +116,21 @@ NEWSLETTER CONTENT:
     # Check if we should use OpenRouter
     use_openrouter = os.environ.get("USE_OPENROUTER", "true").lower() in ("true", "1", "yes")
     
+    # Build system message based on topic
+    system_message = f"You are a consultant helping summarize {topic} newsletter content for regular people."
+    
     # Call the appropriate LLM
     analysis_text = ""
     if use_openrouter:
         print("Using OpenRouter for unified analysis")
-        analysis_text = analyze_with_openrouter(prompt, provider, model)
+        analysis_text = analyze_with_openrouter(prompt, provider, model, topic=topic, custom_guidance=custom_guidance)
     else:
         if provider == 'openai':
             client = openai.OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
             response = client.chat.completions.create(
                 model="gpt-4.1-2025-04-14",
                 messages=[
-                    {"role": "system", "content": "You are an AI consultant helping summarize AI newsletter content for regular people."},
+                    {"role": "system", "content": system_message},
                     {"role": "user", "content": prompt}
                 ]
             )
@@ -116,7 +140,7 @@ NEWSLETTER CONTENT:
             response = anthropic_client.messages.create(
                 model="claude-3-7-sonnet-20250219",
                 max_tokens=3000,
-                system="You are an AI consultant helping summarize AI newsletter content for regular people.",
+                system=system_message,
                 messages=[
                     {"role": "user", "content": prompt}
                 ]
@@ -128,7 +152,7 @@ NEWSLETTER CONTENT:
     
     return analysis_text, topic_titles
 
-def analyze_with_openrouter(prompt, model_provider, custom_model=None):
+def analyze_with_openrouter(prompt, model_provider, custom_model=None, topic='AI', custom_guidance=None):
     """
     Route LLM requests through OpenRouter while maintaining the original provider choice
     or using a custom model if specified.
@@ -137,6 +161,8 @@ def analyze_with_openrouter(prompt, model_provider, custom_model=None):
         prompt: The prompt to send to the LLM
         model_provider: 'claude', 'openai', or 'google' to determine which model to use
         custom_model: Optional custom OpenRouter model name that overrides the model_provider
+        topic: Topic domain for the newsletters (default: 'AI')
+        custom_guidance: Optional custom analysis guidance
     
     Returns:
         The LLM response
@@ -162,8 +188,13 @@ def analyze_with_openrouter(prompt, model_provider, custom_model=None):
         model = model_map[model_provider]
         print(f"Using mapped OpenRouter model: {model}")
     
-    # Prepare the system message based on the provider
-    system_message = "You are an AI consultant helping summarize AI newsletter content for regular people. Your primary goal is to identify the MOST SIGNIFICANT developments across different domains of AI, based on what appears in the newsletters being analyzed. When writing headlines, focus on the substantive development rather than secondary features or demonstrations (e.g., 'Anthropic Launches Claude 3.7' rather than 'Claude AI Plays Pokémon'). Make the 'Why It Matters' section relevant to everyday life, and ensure the 'Practical Impact' section provides specific, actionable advice that regular people can implement. Be sure to include brand new developments (even if only mentioned in 1-2 newsletters) if they appear to be significant. Format your response with markdown headings and sections. IMPORTANT: Ignore or exclude any sponsored, advertorial, or ad content when identifying and summarizing key developments. Do not include advertisers or sponsors as top content, even if they appear frequently."
+    # Prepare the system message based on the topic
+    if topic.upper() == 'AI' and not custom_guidance:
+        # Keep existing detailed AI guidance for backward compatibility
+        system_message = f"You are an AI consultant helping summarize AI newsletter content for regular people. Your primary goal is to identify the MOST SIGNIFICANT developments across different domains of AI, based on what appears in the newsletters being analyzed. When writing headlines, focus on the substantive development rather than secondary features or demonstrations (e.g., 'Anthropic Launches Claude 3.7' rather than 'Claude AI Plays Pokémon'). Make the 'Why It Matters' section relevant to everyday life, and ensure the 'Practical Impact' section provides specific, actionable advice that regular people can implement. Be sure to include brand new developments (even if only mentioned in 1-2 newsletters) if they appear to be significant. Format your response with markdown headings and sections. IMPORTANT: Ignore or exclude any sponsored, advertorial, or ad content when identifying and summarizing key developments. Do not include advertisers or sponsors as top content, even if they appear frequently."
+    else:
+        # Generic system message for other topics or when custom guidance is provided
+        system_message = f"You are a consultant helping summarize {topic} newsletter content for regular people. Your primary goal is to identify the MOST SIGNIFICANT developments based on what appears in the newsletters being analyzed. When writing headlines, focus on the substantive development. Make the 'Why It Matters' section relevant to everyday life, and ensure the 'Practical Impact' section provides specific, actionable advice that regular people can implement. Be sure to include brand new developments (even if only mentioned in 1-2 newsletters) if they appear to be significant. Format your response with markdown headings and sections. IMPORTANT: Ignore or exclude any sponsored, advertorial, or ad content when identifying and summarizing key developments. Do not include advertisers or sponsors as top content, even if they appear frequently."
     
     headers = {
         "Authorization": f"Bearer {openrouter_api_key}",
@@ -301,7 +332,7 @@ def analyze_with_llm_direct(prompt, topics=None, provider='claude'):
         response = client.chat.completions.create(
             model="gpt-4.1-2025-04-14",
             messages=[
-                {"role": "system", "content": "You are an AI consultant helping summarize newsletter content."},
+                {"role": "system", "content": "You are a consultant helping summarize newsletter content."},
                 {"role": "user", "content": prompt}
             ]
         )
@@ -311,7 +342,7 @@ def analyze_with_llm_direct(prompt, topics=None, provider='claude'):
         response = client.messages.create(
             model="claude-3-7-sonnet-20250219",
             max_tokens=3000,
-            system="You are an AI consultant helping summarize newsletter content.",
+            system="You are a consultant helping summarize newsletter content.",
             messages=[
                 {"role": "user", "content": prompt}
             ]

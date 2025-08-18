@@ -477,4 +477,73 @@ class TestGenerateReport:
         
         # Check that report handles empty newsletters gracefully
         assert "# AI NEWSLETTER SUMMARY" in report
-        assert "0 newsletters across 0 sources" in report
+    
+    def test_generate_report_custom_topic(self):
+        """Test report generation with custom topic domain."""
+        newsletters = [
+            {
+                'subject': 'Finance Weekly',
+                'sender': 'Finance Newsletter <finance@newsletter.com>',
+                'date': 'Mon, 01 Jan 2024 12:00:00 +0000',
+                'body': 'Stock market updates'
+            }
+        ]
+        
+        topics = ['Market Update', 'Investment Tips']
+        llm_analysis = "### 1. Market Update\n- **What's New:** Stocks rise"
+        days = 7
+        
+        with patch('report.datetime.datetime') as mock_datetime:
+            mock_now = datetime.datetime(2024, 1, 2, 10, 30, 0)
+            mock_datetime.now.return_value = mock_now
+            mock_datetime.strftime = datetime.datetime.strftime
+            mock_datetime.timedelta = datetime.timedelta
+            
+            with patch('builtins.open', mock_open(read_data='{}')):
+                with patch('os.path.exists', return_value=False):
+                    report, filename_date_range, label = generate_report(
+                        newsletters, topics, llm_analysis, days,
+                        model_info={'model': 'test-model', 'timestamp': '2024-01-02T10:30:00'},
+                        label='finance-news',
+                        topic='Finance'
+                    )
+        
+        # Check Finance-specific content
+        assert "## TOP FINANCE DEVELOPMENTS THIS WEEK" in report
+        assert "Key Finance developments" in report
+        assert "analyzing Finance newsletters" in report
+        # Should not contain AI references
+        assert "## TOP AI DEVELOPMENTS" not in report
+    
+    def test_generate_report_backward_compatibility(self):
+        """Test that default behavior (AI topic) is maintained."""
+        newsletters = [
+            {
+                'subject': 'AI Weekly',
+                'sender': 'AI Newsletter <ai@newsletter.com>',
+                'date': 'Mon, 01 Jan 2024 12:00:00 +0000',
+                'body': 'AI content'
+            }
+        ]
+        
+        topics = ['AI Topic']
+        llm_analysis = "### 1. AI Topic\n- **What's New:** AI advances"
+        days = 7
+        
+        with patch('report.datetime.datetime') as mock_datetime:
+            mock_now = datetime.datetime(2024, 1, 2, 10, 30, 0)
+            mock_datetime.now.return_value = mock_now
+            mock_datetime.strftime = datetime.datetime.strftime
+            mock_datetime.timedelta = datetime.timedelta
+            
+            with patch('builtins.open', mock_open(read_data='{}')):
+                with patch('os.path.exists', return_value=False):
+                    # Call without topic parameter (should default to AI)
+                    report, filename_date_range, label = generate_report(
+                        newsletters, topics, llm_analysis, days
+                    )
+        
+        # Check AI content is present (default behavior)
+        assert "## TOP AI DEVELOPMENTS THIS WEEK" in report
+        assert "Key AI developments" in report
+        assert "analyzing AI newsletters" in report

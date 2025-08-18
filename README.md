@@ -1,13 +1,13 @@
-# AI Newsletter Summarizer
+# Newsletter Summarizer
 
-The AI Newsletter Summarizer is a Python tool designed to automatically retrieve, analyze, and summarize AI-focused newsletters from a user's Gmail account. It distills key developments and actionable insights from multiple newsletters into a concise, easy-to-understand report targeted at regular users, rather than just AI experts.
+The Newsletter Summarizer is a Python tool designed to automatically retrieve, analyze, and summarize newsletters from a user's Gmail account for any topic domain. Originally built for AI newsletters (still the default), it can now analyze Finance, Sports, Technology, Politics, or any other topic by providing custom analysis guidance. It distills key developments and actionable insights from multiple newsletters into a concise, easy-to-understand report targeted at regular users.
 
 ## Features
 
 - **Reliable newsletter fetching** - Sequential processing with robust retry logic and error handling
 - **Resilient error handling** - Continues processing even if individual newsletters fail to fetch or parse
 - **Robust HTML parsing** - Multiple fallback strategies ensure content extraction even from malformed emails
-- Automatically fetches emails tagged with "ai-newsletter" from your Gmail account
+- Automatically fetches emails tagged with a specified label from your Gmail account (default: "ai-newsletter")
 - Extracts and analyzes content from multiple newsletter sources
 - Identifies key topics and trends across newsletters using advanced LLM techniques
 - Uses OpenRouter to route requests to Google Gemini 2.5 Flash (default), OpenAI GPT-4.1, or Anthropic's Claude 3.7 Sonnet for cost-efficient API usage and tracking
@@ -19,7 +19,7 @@ The AI Newsletter Summarizer is a Python tool designed to automatically retrieve
 ## Requirements
 
 - Python 3.11 (recommended) or 3.10-3.13 (also supported)
-- Gmail account with newsletters tagged/labeled as `ai-newsletter`
+- Gmail account with newsletters tagged/labeled (default: `ai-newsletter`, customizable for other topics)
 - Google API credentials (`credentials.json`) - see setup instructions below
 - **OpenRouter API key** (set as `OPENROUTER_API_KEY` environment variable) - required as the default API provider
 - OpenAI API key (set as `OPENAI_API_KEY` environment variable) - only needed if not using OpenRouter
@@ -155,11 +155,186 @@ python main.py --llm-provider openai
 python main.py --days 14
 ```
 
+## Using for Different Topics
+
+While the tool defaults to analyzing AI newsletters for backward compatibility, it can analyze newsletters for any topic domain by using the `--topic` parameter along with custom analysis guidance.
+
+### Basic Topic Usage
+
+```bash
+# Analyze Finance newsletters
+python main.py --topic Finance --label finance-newsletter
+
+# Analyze Sports newsletters  
+python main.py --topic Sports --label sports-digest
+
+# Default behavior (AI newsletters)
+python main.py  # Same as --topic AI --label ai-newsletter
+```
+
+### Custom Analysis Guidance
+
+The tool's analysis can be customized using guidance to focus on what matters for your specific domain:
+
+#### Inline Guidance
+```bash
+python main.py --topic Finance --label finance-news \
+  --analysis-guidance "Focus on market movements, regulatory changes, and investment opportunities. Include specific ticker symbols and fund names when relevant. Emphasize risk considerations."
+```
+
+#### File-based Guidance
+```bash
+# Create a guidance file
+cat > finance_guidance.txt << EOF
+Prioritize the following in order of importance:
+1. Market-moving events and their percentage impacts
+2. Regulatory changes affecting individual investors
+3. New investment products or opportunities
+4. Economic indicators and their implications
+5. Company earnings that beat/miss expectations
+
+For each topic, include:
+- Specific ticker symbols (e.g., AAPL, SPY)
+- Percentage changes when discussing market movements
+- Time horizons for investments (short/medium/long term)
+- Risk level (low/medium/high)
+EOF
+
+# Use the guidance file
+python main.py --topic Finance --label finance-news \
+  --guidance-file finance_guidance.txt
+```
+
+### Examples by Domain
+
+#### Finance Newsletters
+```bash
+python main.py --topic Finance --label finance-newsletter \
+  --analysis-guidance "Focus on market movements, regulatory changes, and investment opportunities. Prioritize actionable insights for individual investors. Include specific ticker symbols, fund names, and percentage changes. Emphasize risk considerations and portfolio implications. Highlight opportunities in both bull and bear scenarios."
+```
+
+**What this produces:**
+- Headlines focus on market movements with specific percentages
+- Includes ticker symbols (AAPL, TSLA, SPY) and fund names (ARKK, VTI)
+- "Why It Matters" sections explain impact on portfolios and retirement accounts
+- "Practical Impact" includes specific actions like "Consider dollar-cost averaging into index funds"
+
+#### Sports Newsletters
+```bash
+python main.py --topic Sports --label sports-news \
+  --analysis-guidance "Focus on game results, player statistics, trades, and injury reports. Include team standings and playoff implications. Highlight fantasy sports relevance. Mention specific player names and statistics. Focus on major leagues (NFL, NBA, MLB, NHL) but include notable stories from other sports."
+```
+
+**What this produces:**
+- Headlines about major games, trades, and player achievements
+- Specific statistics (e.g., "LeBron James scores 45 points")
+- "Why It Matters" explains playoff implications or record-breaking achievements
+- "Practical Impact" includes fantasy sports recommendations
+
+#### Technology Newsletters
+```bash
+python main.py --topic Technology --label tech-digest \
+  --analysis-guidance "Focus on product launches, security vulnerabilities, developer tools, and industry trends. Include version numbers and release dates. Emphasize practical implications for both consumers and developers. Mention compatibility requirements and migration paths for updates."
+```
+
+**What this produces:**
+- Headlines about new products, updates, and security issues
+- Specific version numbers and compatibility requirements
+- "Why It Matters" explains impact on workflows and security
+- "Practical Impact" includes update recommendations and migration strategies
+
+#### Politics/Policy Newsletters
+```bash
+python main.py --topic Politics --label politics-digest \
+  --analysis-guidance "Focus on policy changes, legislation, and regulatory updates that affect citizens directly. Avoid partisan framing - stick to factual implications. Include effective dates and compliance requirements. Emphasize practical impacts on taxes, healthcare, education, and civil rights."
+```
+
+**What this produces:**
+- Headlines about legislation and policy changes
+- Specific dates when changes take effect
+- "Why It Matters" explains real-world impact on citizens
+- "Practical Impact" includes actions like registering to vote or filing for benefits
+
+### Analysis Guidance Best Practices
+
+#### What Makes Good Guidance
+
+**1. Be Specific About Priorities**
+```
+Good: "Prioritize market-moving events over analyst opinions"
+Poor: "Focus on important stuff"
+```
+
+**2. Define Output Expectations**
+```
+Good: "Include ticker symbols and percentage changes"
+Poor: "Add some details"
+```
+
+**3. Set Clear Scope**
+```
+Good: "Focus on US markets with brief mentions of major international events"
+Poor: "Cover everything about finance"
+```
+
+**4. Specify Actionability**
+```
+Good: "Practical impacts should include specific investment actions or portfolio adjustments"
+Poor: "Make it useful"
+```
+
+#### Guidance Structure Template
+
+Here's a template you can adapt for any domain:
+
+```
+Prioritize these topics in order:
+1. [Most important category]
+2. [Second priority]
+3. [Third priority]
+
+For each topic, include:
+- [Specific detail type 1]
+- [Specific detail type 2]
+- [Specific detail type 3]
+
+Focus on practical implications for [target audience].
+Emphasize [key aspect] over [less important aspect].
+When discussing [topic], always include [specific information].
+```
+
+### How Guidance Affects Output
+
+| Without Custom Guidance | With Custom Guidance |
+|------------------------|---------------------|
+| Generic topic selection | Domain-specific prioritization |
+| General insights | Targeted, actionable information |
+| Broad audience appeal | Specific audience focus |
+| Standard formatting | Domain-appropriate details |
+
+### Combining Topic and Label
+
+The `--topic` parameter controls how the content is analyzed and presented, while `--label` controls which emails are fetched:
+
+```bash
+# Fetch emails labeled "investment-news" but analyze as Finance
+python main.py --topic Finance --label investment-news
+
+# Fetch emails labeled "newsletter" but analyze as Technology
+python main.py --topic Technology --label newsletter --from-email tech@example.com
+```
+
 ## Usage
 
 1.  **Setup Gmail Label**
 
-    In your Gmail account, create a label named exactly `ai-newsletter`. Apply this label to all the AI newsletters you want the script to process.
+    In your Gmail account, create a label for your newsletters. The default is `ai-newsletter`, but you can use any label that matches your topic:
+    - `ai-newsletter` for AI newsletters (default)
+    - `finance-newsletter` for Finance newsletters
+    - `sports-digest` for Sports newsletters
+    - Or any custom label you prefer
+    
+    Apply this label to all the newsletters you want the script to process.
 
 2.  **Activate the virtual environment**
 
@@ -243,6 +418,23 @@ You can modify the tool's behavior using these optional flags:
     python main.py --days 14
     ```
     (Default: `7`)
+
+-   `--topic TOPIC`: Specify the topic domain for analysis.
+    ```bash
+    python main.py --topic Finance
+    python main.py --topic Sports
+    ```
+    (Default: `AI`)
+
+-   `--analysis-guidance TEXT`: Provide custom analysis instructions inline.
+    ```bash
+    python main.py --topic Finance --analysis-guidance "Focus on market movements and include ticker symbols"
+    ```
+
+-   `--guidance-file FILE`: Load custom analysis instructions from a file.
+    ```bash
+    python main.py --topic Sports --guidance-file sports_analysis_guide.txt
+    ```
 
 -   `--label LABEL`: Specify the Gmail label to filter newsletters (default: `ai-newsletter`).
     ```bash
@@ -534,6 +726,35 @@ You can also trigger the workflow manually:
 4. Optionally customize:
    - **days**: Number of days to look back (default: 7)
    - **label**: Gmail label to filter (default: ai-newsletter)
+   - **topic**: Topic domain for analysis (default: AI)
+
+### Configuring for Different Topics
+
+To configure the GitHub Action for a different topic, edit `.github/workflows/generate-summary.yml`:
+
+```yaml
+# For Finance newsletters
+- name: Generate summary
+  run: |
+    python main.py --days 7 --topic Finance --label finance-newsletter
+
+# Or with custom guidance
+- name: Generate summary with guidance
+  run: |
+    python main.py --days 7 --topic Sports --label sports-digest \
+      --analysis-guidance "Focus on game results and player statistics"
+```
+
+You can also add the topic as a workflow input for manual runs:
+
+```yaml
+workflow_dispatch:
+  inputs:
+    topic:
+      description: 'Topic domain for analysis'
+      required: false
+      default: 'AI'
+```
 
 ### Viewing Your Published Site
 
