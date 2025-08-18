@@ -14,6 +14,14 @@ on:
         description: 'Gmail label to filter'
         required: false
         default: 'ai-newsletter'
+      topic:
+        description: 'Topic domain (e.g., AI, Finance, Sports)'
+        required: false
+        default: 'AI'
+      analysis_guidance:
+        description: 'Custom analysis guidance (optional)'
+        required: false
+        default: ''
 
 permissions:
   contents: write
@@ -94,12 +102,25 @@ jobs:
         # Debug: Test Gmail authentication
         python -c "from auth import authenticate_gmail; service = authenticate_gmail(); print('Gmail auth successful')" || echo "Gmail auth failed"
         
+        # Get parameters with defaults
+        TOPIC="${{ github.event.inputs.topic || 'AI' }}"
+        GUIDANCE="${{ github.event.inputs.analysis_guidance }}"
+        
+        # Build command
+        CMD="python main.py"
+        CMD="$CMD --days ${{ github.event.inputs.days || '7' }}"
+        CMD="$CMD --label \"${{ github.event.inputs.label || 'ai-newsletter' }}\""
+        CMD="$CMD --topic \"$TOPIC\""
+        CMD="$CMD --output docs/_posts"
+        
+        # Add guidance if provided
+        if [ -n "$GUIDANCE" ]; then
+          CMD="$CMD --analysis-guidance \"$GUIDANCE\""
+        fi
+        
         # Run the summarizer with memory limits
         ulimit -v 2097152  # Limit virtual memory to 2GB
-        python main.py \
-          --days ${{ github.event.inputs.days || '7' }} \
-          --label "${{ github.event.inputs.label || 'ai-newsletter' }}" \
-          --output docs/_posts || {
+        eval $CMD || {
             echo "ERROR: Newsletter summary generation failed!"
             echo "Check the logs above for details."
             echo "Common issues:"
@@ -121,9 +142,10 @@ jobs:
         if git diff --staged --quiet; then
           echo "No changes to commit"
         else
-          # Create commit with date
+          # Get topic for commit message
+          TOPIC="${{ github.event.inputs.topic || 'AI' }}"
           COMMIT_DATE=$(date +"%Y-%m-%d")
-          git commit -m "Add AI newsletter summary for $COMMIT_DATE - Generated automatically by GitHub Actions"
+          git commit -m "Add $TOPIC newsletter summary for $COMMIT_DATE - Generated automatically by GitHub Actions"
           
           # Push changes
           git push origin main

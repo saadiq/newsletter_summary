@@ -1,0 +1,29 @@
+Focus on the following areas in order of importance:
+1. Major product launches and updates
+2. Security vulnerabilities and data breaches
+3. Developer tools and API changes
+4. Industry acquisitions and partnerships
+5. Open source project developments
+
+For each topic, include:
+- Version numbers and release dates
+- Compatibility requirements
+- Migration paths for updates
+- Security patch urgency levels
+
+Emphasize practical implications for:
+- Software developers and engineers
+- IT administrators and DevOps teams
+- End users and consumers
+- Small business owners
+
+"Why It Matters" should explain:
+- Impact on existing workflows
+- Security implications
+- Performance improvements or degradations
+- Cost implications
+
+"Practical Impact" should provide:
+- Specific update/patch commands
+- Migration timelines
+- Alternative solutions if applicable

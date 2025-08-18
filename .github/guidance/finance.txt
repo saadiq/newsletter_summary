@@ -1,0 +1,17 @@
+Focus on the following areas in order of importance:
+1. Market-moving events and their percentage impacts
+2. Regulatory changes affecting individual investors
+3. New investment products or opportunities
+4. Economic indicators and their implications
+5. Company earnings that beat/miss expectations
+
+For each topic, include:
+- Specific ticker symbols (e.g., AAPL, SPY, TSLA)
+- Percentage changes when discussing market movements
+- Time horizons for investments (short/medium/long term)
+- Risk level (low/medium/high)
+
+Prioritize actionable insights for individual investors.
+Emphasize risk considerations and portfolio implications.
+When discussing stocks, always include the ticker symbol.
+Focus on US markets with brief mentions of major international events.
